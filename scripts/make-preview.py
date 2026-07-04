@@ -11,9 +11,9 @@ OUT_PATH = ROOT / "preview.png"
 WIDTH = 1280
 HEIGHT = 720
 
-TITLE_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
-BODY_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
-BODY_BOLD_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+TITLE_FONT = "C:/Windows/Fonts/georgiab.ttf"
+BODY_FONT = "C:/Windows/Fonts/arial.ttf"
+BODY_BOLD_FONT = "C:/Windows/Fonts/arialbd.ttf"
 
 
 def vertical_gradient(size, top, bottom):
