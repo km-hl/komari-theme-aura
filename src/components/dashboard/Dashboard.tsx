@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Clock, Server, MapPin, Activity, ArrowUp, ArrowDown } from "lucide-react";
+import { Clock, Server, Activity, ArrowUp, ArrowDown, Map } from "lucide-react";
 import { useGlobalStats } from "@/hooks/useNode";
 import { formatBytes } from "@/utils/format";
+import WorldMap from "./WorldMap";
 
 export function Dashboard() {
   const stats = useGlobalStats();
+  const [showMap, setShowMap] = useState(false);
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -48,15 +50,22 @@ export function Dashboard() {
         </div>
 
         {/* Regions Card */}
-        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
-          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
-            <MapPin size={16} />
+        <div 
+          className="server-card p-5 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-[var(--color-primary)] transition-colors"
+          onClick={() => setShowMap(!showMap)}
+          title="点击切换世界地图"
+        >
+          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 group-hover:text-[var(--color-primary)] transition-all">
+            <Map size={16} />
           </div>
           <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
             {stats.uniqueRegions}
           </div>
-          <div className="text-[13px] text-[var(--text-secondary)] font-medium">
+          <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center gap-1.5">
             覆盖区域
+            <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)]">
+              {showMap ? "隐藏地图" : "显示地图"}
+            </span>
           </div>
         </div>
 
@@ -97,6 +106,7 @@ export function Dashboard() {
         </div>
 
       </div>
+      {showMap && <WorldMap />}
     </div>
   );
 }
