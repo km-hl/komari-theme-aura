@@ -10,12 +10,14 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 
+import { resolveFlagCode } from "@/components/ui/Flag";
+
 const geoUrl = "/world.json";
 
 // Map alpha-2 codes (commonly used in ServerStatus/Nezha) to TopoJSON numeric IDs
 const alpha2ToNumeric: Record<string, string> = {
   US: "840", CN: "156", HK: "344", TW: "158", JP: "392",
-  SG: "702", KR: "410", DE: "276", FR: "250", GB: "826",
+  SG: "702", KR: "410", DE: "276", FR: "250", GB: "826", UK: "826",
   NL: "528", CA: "124", AU: "036", RU: "643", IN: "356",
   MY: "458", ID: "360", VN: "704", TH: "764", PH: "608",
   BR: "076", ZA: "710", AE: "784", SA: "682", IT: "380",
@@ -39,7 +41,9 @@ export default function WorldMap() {
       const node = snap.byUuid[uuid];
       if (!node || !node.region) continue;
 
-      const code = node.region.toUpperCase();
+      const code = resolveFlagCode(node.region);
+      if (!code) continue;
+      
       const numericId = alpha2ToNumeric[code];
       if (!numericId) continue;
 
@@ -64,6 +68,15 @@ export default function WorldMap() {
         statusMap.set(id, "partial");
       }
     });
+
+    // 为本地无后端的开发环境注入模拟数据
+    if (import.meta.env.DEV && statusMap.size === 0) {
+      statusMap.set("840", "online");  // US: 全部在线
+      statusMap.set("156", "partial"); // CN: 部分在线
+      statusMap.set("392", "offline"); // JP: 全部离线
+      statusMap.set("276", "online");  // DE: 全部在线
+      statusMap.set("826", "online");  // UK: 全部在线
+    }
 
     return statusMap;
   }, [visibleUuids, snap.byUuid]);

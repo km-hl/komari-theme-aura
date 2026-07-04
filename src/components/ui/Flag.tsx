@@ -34,7 +34,7 @@ function getCountryCodeFromFlagEmoji(input: string): string | null {
   );
 }
 
-function resolveFlagCode(region: string): string | null {
+export function resolveFlagCode(region: string): string | null {
   const countryCodeFromEmoji = getCountryCodeFromFlagEmoji(region);
   if (countryCodeFromEmoji) return countryCodeFromEmoji;
 
