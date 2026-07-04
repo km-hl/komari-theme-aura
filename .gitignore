@@ -18,3 +18,7 @@ Thumbs.db
 
 .cache/
 coverage/
+
+# Docs
+api.md
+theme.md
