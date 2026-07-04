@@ -69,15 +69,6 @@ export default function WorldMap() {
       }
     });
 
-    // 为本地无后端的开发环境注入模拟数据
-    if (import.meta.env.DEV && statusMap.size === 0) {
-      statusMap.set("840", "online");  // US: 全部在线
-      statusMap.set("156", "partial"); // CN: 部分在线
-      statusMap.set("392", "offline"); // JP: 全部离线
-      statusMap.set("276", "online");  // DE: 全部在线
-      statusMap.set("826", "online");  // UK: 全部在线
-    }
-
     return statusMap;
   }, [visibleUuids, snap.byUuid]);
 
