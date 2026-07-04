@@ -13,7 +13,10 @@ export function AppShell() {
         </div>
       </main>
       <footer className="site-footer">
-        <div className="site-footer-inner">Powered by Komari Monitor.</div>
+        <div className="site-footer-inner flex flex-col items-center gap-1">
+          <p>Powered by Komari Monitor.</p>
+          <p className="opacity-60">Themed by <a href="https://github.com/km-hl/komari-theme-aura" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-white transition-colors">Aura</a></p>
+        </div>
       </footer>
     </div>
   );

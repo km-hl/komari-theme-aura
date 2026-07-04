@@ -1,7 +1,9 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { useNode } from "@/hooks/useNode";
+import { InstanceDetails } from "@/components/instance/InstanceDetails";
+import { LoadChart } from "@/components/instance/LoadChart";
 import { Flag } from "@/components/ui/Flag";
 import { OsIcon } from "@/components/ui/OsIcon";
 import { clsx } from "clsx";
@@ -33,7 +35,8 @@ export function NodeTable({ uuids }: NodeTableProps) {
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead>
           <tr className="border-b border-[var(--border-subtle)] text-[13px] text-[var(--text-tertiary)]">
-            <th className="font-medium px-4 py-3 w-[18%]">节点名称</th>
+            <th className="font-medium px-4 py-3 w-[4%] text-center"></th>
+            <th className="font-medium px-4 py-3 w-[16%]">节点名称</th>
             <th className="font-medium px-4 py-3 text-center w-[10%]">操作系统</th>
             <th className="font-medium px-4 py-3 w-[8%]">状态</th>
             <th className="font-medium px-4 py-3 text-center w-[8%]">CPU</th>
@@ -57,10 +60,12 @@ export function NodeTable({ uuids }: NodeTableProps) {
 const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
   const node = useNode(uuid);
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (!node) {
     return (
       <tr className="animate-pulse">
-        <td colSpan={9} className="h-[68px] bg-[var(--bg-card-hover)]" />
+        <td colSpan={10} className="h-[68px] bg-[var(--bg-card-hover)]" />
       </tr>
     );
   }
@@ -74,7 +79,16 @@ const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
   const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
 
   return (
-    <tr className="hover:bg-[var(--bg-card-hover)] transition-colors group">
+    <>
+    <tr 
+      className="hover:bg-[var(--bg-card-hover)] transition-colors group cursor-pointer"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
+      {/* Expand Toggle */}
+      <td className="px-4 py-3 align-middle text-center text-[var(--text-tertiary)]">
+        <ChevronRight size={16} className={clsx("transition-transform mx-auto", isExpanded && "rotate-90")} />
+      </td>
+
       {/* Name */}
       <td className="px-4 py-3 align-middle">
         <div className="flex items-center gap-2">
@@ -207,5 +221,18 @@ const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
         </div>
       </td>
     </tr>
+    {isExpanded && (
+      <tr className="bg-[color-mix(in_srgb,var(--bg-card-hover)_60%,transparent)]">
+        <td colSpan={10} className="p-4 border-b border-[var(--border-subtle)]">
+          <div className="flex flex-col gap-4">
+            <InstanceDetails uuid={uuid} />
+            <div className="h-[260px] w-full">
+              <LoadChart uuid={uuid} hours={24} active={true} />
+            </div>
+          </div>
+        </td>
+      </tr>
+    )}
+    </>
   );
 });

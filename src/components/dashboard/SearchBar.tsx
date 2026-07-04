@@ -36,7 +36,7 @@ export function SearchBar({
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="control-group overflow-x-auto hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <style>{`
           .hide-scrollbar::-webkit-scrollbar {
             display: none;
@@ -46,11 +46,10 @@ export function SearchBar({
           <button
             key={group}
             onClick={() => setActiveGroup(group)}
+            style={{ padding: '0 20px' }}
             className={clsx(
-              "whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 border",
-              activeGroup === group
-                ? "bg-[var(--text-primary)] text-[var(--bg-base)] border-[var(--text-primary)] shadow-sm"
-                : "bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
+              "control-button control-toggle inline-flex items-center justify-center whitespace-nowrap h-9 rounded-full text-[12px] font-medium transition-all duration-200 border shrink-0",
+              activeGroup === group && "is-active"
             )}
           >
             {group}
@@ -58,26 +57,26 @@ export function SearchBar({
         ))}
         </div>
 
-        <div className="flex items-center gap-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg p-1 hidden md:flex shrink-0">
+        <div className="control-group hidden md:inline-flex shrink-0">
           <button
             onClick={() => setViewMode("grid")}
             className={clsx(
-              "p-1.5 rounded-md transition-all flex items-center justify-center",
-              viewMode === "grid" ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+              "control-button control-toggle grid h-9 w-9 place-items-center",
+              viewMode === "grid" && "is-active"
             )}
             title="网格视图"
           >
-            <LayoutGrid size={15} />
+            <LayoutGrid size={16} strokeWidth={2.2} />
           </button>
           <button
             onClick={() => setViewMode("table")}
             className={clsx(
-              "p-1.5 rounded-md transition-all flex items-center justify-center",
-              viewMode === "table" ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+              "control-button control-toggle grid h-9 w-9 place-items-center",
+              viewMode === "table" && "is-active"
             )}
             title="表格视图"
           >
-            <List size={15} />
+            <List size={16} strokeWidth={2.2} />
           </button>
         </div>
       </div>
