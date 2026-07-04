@@ -152,7 +152,7 @@ def main():
     pill_font = ImageFont.truetype(BODY_BOLD_FONT, 20)
     meta_font = ImageFont.truetype(BODY_FONT, 18)
 
-    draw.text((76, 82), "Lumina", font=title_font, fill=(25, 34, 47, 255))
+    draw.text((76, 82), "Aura", font=title_font, fill=(25, 34, 47, 255))
     draw.text((82, 186), "Komari theme", font=subtitle_font, fill=(60, 73, 95, 255))
     draw.text(
         (82, 238),

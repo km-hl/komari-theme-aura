@@ -318,11 +318,11 @@ export function ThemeManage() {
       </div>
 
       <InstancePanel
-        title="Lumina 主题设置"
-        description="集中调整 Lumina 的展示偏好与首页延迟绑定；保存后会立即应用到当前站点。"
+        title="Aura 主题设置"
+        description="集中调整 Aura 的展示偏好与首页延迟绑定；保存后会立即应用到当前站点。"
         aside={
           <div className="text-right text-[11px] text-[var(--text-tertiary)]">
-            <div>主题: {config?.theme || "Lumina"}</div>
+            <div>主题: {config?.theme || "Aura"}</div>
             <div>已绑定首页 Ping 节点 {assignedNodeCount} / {sortedClients.length}</div>
           </div>
         }

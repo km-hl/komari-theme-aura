@@ -22,7 +22,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         
         {/* Time Card */}
-        <div className="card-base p-5 flex flex-col justify-between rounded-xl relative overflow-hidden group">
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
             <Clock size={16} />
           </div>
@@ -35,7 +35,7 @@ export function Dashboard() {
         </div>
 
         {/* Nodes Card */}
-        <div className="card-base p-5 flex flex-col justify-between rounded-xl relative overflow-hidden group">
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
             <Activity size={16} />
           </div>

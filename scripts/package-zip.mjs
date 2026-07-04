@@ -1,4 +1,4 @@
-// Packages Lumina-vX.Y.Z.zip ready for `komari-theme.json` + `preview.png` + `dist/` drop-in.
+// Packages Aura-vX.Y.Z.zip ready for `komari-theme.json` + `preview.png` + `dist/` drop-in.
 // Uses Node's builtin zlib via a minimal zip stream (no external deps).
 
 import { createWriteStream, readdirSync, readFileSync, statSync } from "node:fs";
@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const manifest = JSON.parse(readFileSync(resolve(root, "komari-theme.json"), "utf8"));
 const version = manifest.version ?? "0.0.0";
-const short = manifest.short ?? "Lumina";
+const short = manifest.short ?? "Aura";
 const outPath = resolve(root, `${short}-v${version}.zip`);
 
 function crc32(buf) {

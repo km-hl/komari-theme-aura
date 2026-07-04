@@ -12,7 +12,7 @@ const APPEARANCE_OPTIONS = [
   { value: "system", icon: Monitor, label: "跟随系统" },
   { value: "dark", icon: Moon, label: "深色" },
 ] as const;
-const COLLAPSED_STORAGE_KEY = "lumina:floating-controls-collapsed";
+const COLLAPSED_STORAGE_KEY = "aura:floating-controls-collapsed";
 
 function readStoredCollapsed() {
   try {

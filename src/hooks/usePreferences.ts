@@ -72,7 +72,7 @@ function readStoredAppearance() {
 }
 
 function persistAppearance(value: Appearance) {
-  // Store as JSON string for compatibility with older Lumina bundles that parsed this key.
+  // Store as JSON string for compatibility with older Aura bundles that parsed this key.
   localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(value));
 }
 
