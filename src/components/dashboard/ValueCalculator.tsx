@@ -228,7 +228,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                     key={c}
                     onClick={() => setTargetCurrency(c)}
                     className={clsx(
-                      "px-3 py-1.5 text-[13px] font-medium rounded-md transition-all whitespace-nowrap",
+                      "px-2.5 py-1 text-[12px] font-medium rounded-md transition-all whitespace-nowrap",
                       targetCurrency === c 
                         ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
@@ -275,7 +275,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
                 className={clsx(
-                  "px-4 py-1 text-[13px] font-medium rounded-full transition-all flex items-center gap-2",
+                  "px-3 py-1 text-[12px] font-medium rounded-full transition-all flex items-center gap-1.5",
                   filterType === tab.id 
                     ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
