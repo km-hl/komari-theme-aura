@@ -70,10 +70,10 @@ export default function WorldMap() {
 
   const getColor = (id: string) => {
     const status = regionStatusMap.get(id);
-    if (status === "online") return "var(--color-success)";
-    if (status === "partial") return "var(--color-warning)";
-    if (status === "offline") return "var(--color-danger)";
-    return "var(--bg-tertiary)";
+    if (status === "online") return "var(--status-success)";
+    if (status === "partial") return "var(--status-warning)";
+    if (status === "offline") return "var(--status-error)";
+    return "var(--fill-tertiary)";
   };
 
   return (
@@ -86,7 +86,7 @@ export default function WorldMap() {
           style={{ width: "100%", height: "100%" }}
         >
           <ZoomableGroup center={[0, 0]} zoom={1} minZoom={1} maxZoom={4}>
-            <Graticule stroke="var(--border-color)" strokeWidth={0.5} opacity={0.5} />
+            <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.5} />
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
                 geographies.map((geo) => (
@@ -94,12 +94,12 @@ export default function WorldMap() {
                     key={geo.rsmKey}
                     geography={geo}
                     fill={getColor(geo.id)}
-                    stroke="var(--bg-primary)"
+                    stroke="var(--surface)"
                     strokeWidth={0.5}
                     style={{
                       default: { outline: "none", transition: "all 250ms" },
                       hover: {
-                        fill: regionStatusMap.has(geo.id) ? getColor(geo.id) : "var(--border-color)",
+                        fill: regionStatusMap.has(geo.id) ? getColor(geo.id) : "var(--border)",
                         outline: "none",
                         cursor: "pointer",
                       },
@@ -113,17 +113,17 @@ export default function WorldMap() {
         </ComposableMap>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-[var(--bg-primary)]/80 backdrop-blur-md border border-[var(--border-color)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)]">
+        <div className="absolute bottom-4 left-4 bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)]">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-success)]"></div>
             全部在线
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-warning)]"></div>
             部分在线
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-error)]"></div>
             全部离线
           </div>
         </div>
