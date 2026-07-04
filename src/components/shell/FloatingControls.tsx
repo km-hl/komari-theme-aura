@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Monitor, Settings, SlidersHorizontal, Sun, Moon } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Monitor, Settings, SlidersHorizontal, Sun, Moon, Calculator } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useNodeStoreStatus } from "@/hooks/useNode";
 import { useAuth } from "@/hooks/useAuth";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { clsx } from "clsx";
+import { ValueCalculator } from "@/components/dashboard/ValueCalculator";
 
 const APPEARANCE_OPTIONS = [
   { value: "light", icon: Sun, label: "浅色" },
@@ -37,6 +38,7 @@ export function FloatingControls() {
   const { failureStreak } = useNodeStoreStatus();
   const [searchParams] = useSearchParams();
   const [collapsed, setCollapsed] = useState(readStoredCollapsed);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const showAdmin = config?.theme_settings?.enableAdminButton !== false;
   const showThemeManage = Boolean(me?.logged_in);
   const isThemeManageView = searchParams.get("view") === "theme-manage";
@@ -96,6 +98,16 @@ export function FloatingControls() {
                 <SlidersHorizontal size={16} />
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => setIsCalculatorOpen(true)}
+              aria-label="剩余价值计算器"
+              title="剩余价值计算器"
+              tabIndex={hiddenTabIndex}
+              className="control-button grid h-9 w-9 place-items-center"
+            >
+              <Calculator size={16} />
+            </button>
             {showAdmin && (
               <a
                 href="/admin"
@@ -135,6 +147,7 @@ export function FloatingControls() {
           </div>
         )}
       </div>
+      <ValueCalculator isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
     </div>
   );
 }

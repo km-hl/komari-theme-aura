@@ -1,11 +1,13 @@
 import { lazy, Suspense, useState, useMemo, useSyncExternalStore } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { NodeGrid } from "@/components/node/NodeGrid";
+import { NodeTable } from "@/components/node/NodeTable";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { useFilteredNodeUuids, useVisibleNodeUuids } from "@/hooks/useNode";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { getSnapshot, subscribe } from "@/services/wsStore";
 
 const ThemeManage = lazy(() =>
@@ -25,6 +27,9 @@ export function Home() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeGroup, setActiveGroup] = useState("所有");
+  const { data: config } = usePublicConfig();
+  const defaultViewMode = config?.theme_settings?.defaultView === "table" ? "table" : "grid";
+  const [viewMode, setViewMode] = useState<"grid" | "table">(defaultViewMode);
 
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -106,8 +111,14 @@ export function Home() {
         activeGroup={activeGroup}
         setActiveGroup={setActiveGroup}
         groups={groups}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
-      <NodeGrid uuids={filteredUuids} />
+      {viewMode === "table" ? (
+        <NodeTable uuids={filteredUuids} />
+      ) : (
+        <NodeGrid uuids={filteredUuids} />
+      )}
     </div>
   );
 }

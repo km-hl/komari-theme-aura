@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, LayoutGrid, List } from "lucide-react";
 import { clsx } from "clsx";
 
 interface SearchBarProps {
@@ -7,6 +7,8 @@ interface SearchBarProps {
   activeGroup: string;
   setActiveGroup: (group: string) => void;
   groups: string[];
+  viewMode: "grid" | "table";
+  setViewMode: (mode: "grid" | "table") => void;
 }
 
 export function SearchBar({
@@ -15,6 +17,8 @@ export function SearchBar({
   activeGroup,
   setActiveGroup,
   groups,
+  viewMode,
+  setViewMode,
 }: SearchBarProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -31,7 +35,8 @@ export function SearchBar({
         />
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <style>{`
           .hide-scrollbar::-webkit-scrollbar {
             display: none;
@@ -51,6 +56,30 @@ export function SearchBar({
             {group}
           </button>
         ))}
+        </div>
+
+        <div className="flex items-center gap-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg p-1 hidden md:flex shrink-0">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={clsx(
+              "p-1.5 rounded-md transition-all flex items-center justify-center",
+              viewMode === "grid" ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+            )}
+            title="网格视图"
+          >
+            <LayoutGrid size={15} />
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={clsx(
+              "p-1.5 rounded-md transition-all flex items-center justify-center",
+              viewMode === "table" ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+            )}
+            title="表格视图"
+          >
+            <List size={15} />
+          </button>
+        </div>
       </div>
     </div>
   );

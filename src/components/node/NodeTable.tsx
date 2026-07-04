@@ -1,0 +1,204 @@
+import { memo } from "react";
+import { Link } from "react-router-dom";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import { useNode } from "@/hooks/useNode";
+import { Flag } from "@/components/ui/Flag";
+import { clsx } from "clsx";
+import {
+  formatBytes,
+  formatExpireDays,
+  formatOfflineDuration,
+  formatTrafficRate,
+  formatUptimeDays,
+} from "@/utils/format";
+import { getExpireTextColor } from "@/utils/expireStatus";
+
+interface NodeTableProps {
+  uuids: string[];
+}
+
+export function NodeTable({ uuids }: NodeTableProps) {
+  if (uuids.length === 0) {
+    return (
+      <div className="flex h-[40vh] flex-col items-center justify-center gap-2 text-[var(--text-tertiary)]">
+        <span className="text-[15px]">未找到匹配的节点或尚未连接到任何节点</span>
+        <span className="text-[12px]">请尝试更改搜索条件或等待后端推送</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
+      <table className="w-full text-left border-collapse min-w-[1000px]">
+        <thead>
+          <tr className="border-b border-[var(--border-subtle)] text-[13px] text-[var(--text-tertiary)]">
+            <th className="font-medium px-4 py-3 w-[18%]">节点名称</th>
+            <th className="font-medium px-4 py-3 w-[10%]">操作系统</th>
+            <th className="font-medium px-4 py-3 w-[8%]">状态</th>
+            <th className="font-medium px-4 py-3 w-[8%]">CPU</th>
+            <th className="font-medium px-4 py-3 w-[12%]">内存</th>
+            <th className="font-medium px-4 py-3 w-[12%]">磁盘</th>
+            <th className="font-medium px-4 py-3 w-[12%]">价格信息</th>
+            <th className="font-medium px-4 py-3 w-[10%]">实时网络</th>
+            <th className="font-medium px-4 py-3 w-[10%]">总传输量</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[var(--border-subtle)]">
+          {uuids.map((uuid) => (
+            <NodeTableRow key={uuid} uuid={uuid} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
+  const node = useNode(uuid);
+
+  if (!node) {
+    return (
+      <tr className="animate-pulse">
+        <td colSpan={9} className="h-[68px] bg-[var(--bg-card-hover)]" />
+      </tr>
+    );
+  }
+
+  const expire = formatExpireDays(node.expired_at);
+  const uptime = formatUptimeDays(node.uptime);
+  const upRate = formatTrafficRate(node.netUp);
+  const downRate = formatTrafficRate(node.netDown);
+  const isOnline = node.online === true;
+  const isOffline = node.online === false;
+  const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
+
+  return (
+    <tr className="hover:bg-[var(--bg-card-hover)] transition-colors group">
+      {/* Name */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex items-center gap-2">
+          <Flag region={node.region} size={16} />
+          <div className="flex flex-col">
+            <Link
+              to={`/instance/${node.uuid}`}
+              className="text-[14px] font-semibold text-[var(--text-primary)] hover:text-blue-400 transition-colors truncate max-w-[150px]"
+              title={node.name}
+            >
+              {node.name}
+            </Link>
+            <span className="text-[12px] text-[var(--text-tertiary)]">
+              {isOnline ? `${uptime.value} ${uptime.unit}` : offlineFor ? `${offlineFor.value}${offlineFor.unit}` : "未知"}
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* OS */}
+      <td className="px-4 py-3 align-middle">
+        <span className="text-[13px] text-[var(--text-secondary)] truncate max-w-[80px] block" title={node.os}>
+          {node.os || "-"}
+        </span>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex items-center gap-1.5">
+          <span
+            className="w-2 h-2 rounded-full shadow-sm"
+            style={{
+              background: node.online == null ? "var(--text-tertiary)" : isOnline ? "var(--status-online)" : "var(--status-offline)",
+              boxShadow: `0 0 0 2px color-mix(in srgb, ${
+                node.online == null ? "var(--text-tertiary)" : isOnline ? "var(--status-online)" : "var(--status-offline)"
+              } 20%, transparent)`
+            }}
+          />
+          <span className={clsx("text-[13px] font-medium", isOnline ? "text-[var(--status-online)]" : isOffline ? "text-[var(--status-offline)]" : "text-[var(--text-tertiary)]")}>
+            {node.online == null ? "同步中" : isOnline ? "在线" : "离线"}
+          </span>
+        </div>
+      </td>
+
+      {/* CPU */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1 w-full max-w-[60px]">
+          <div className="text-[12px] text-[var(--text-primary)] font-medium tabular-nums">{node.cpuPct.toFixed(0)}%</div>
+          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--progress-cpu)]" style={{ width: `${Math.min(100, node.cpuPct)}%` }} />
+          </div>
+        </div>
+      </td>
+
+      {/* RAM */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1 w-full max-w-[100px]">
+          <div className="flex justify-between items-center text-[11px] text-[var(--text-secondary)] tabular-nums">
+            <span>{node.ramPct.toFixed(0)}%</span>
+            <span>{formatBytes(node.ramUsed)} / {formatBytes(node.ramTotal)}</span>
+          </div>
+          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--progress-memory)]" style={{ width: `${Math.min(100, node.ramPct)}%` }} />
+          </div>
+        </div>
+      </td>
+
+      {/* Disk */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1 w-full max-w-[100px]">
+          <div className="flex justify-between items-center text-[11px] text-[var(--text-secondary)] tabular-nums">
+            <span>{node.diskPct.toFixed(0)}%</span>
+            <span>{formatBytes(node.diskUsed)} / {formatBytes(node.diskTotal)}</span>
+          </div>
+          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--progress-disk)]" style={{ width: `${Math.min(100, node.diskPct)}%` }} />
+          </div>
+        </div>
+      </td>
+
+      {/* Price / Info */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1">
+          {node.price > 0 ? (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-medium">
+                {node.currency || "¥"}{node.price}/{node.billing_cycle || "周期"}
+              </span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--status-online)_10%,transparent)] border border-[color-mix(in_srgb,var(--status-online)_20%,transparent)]" style={{ color: getExpireTextColor(node.expired_at) }}>
+                余 {expire.value} 天
+              </span>
+            </div>
+          ) : (
+            <span className="text-[12px] text-[var(--text-tertiary)]">-</span>
+          )}
+        </div>
+      </td>
+
+      {/* Network Live */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1 text-[11px] text-[var(--progress-cpu)] tabular-nums">
+            <ArrowUp size={11} strokeWidth={2.5} />
+            <span>{upRate.value} {upRate.unit}</span>
+          </div>
+          <div className="flex items-center gap-1 text-[11px] text-[var(--status-success)] tabular-nums">
+            <ArrowDown size={11} strokeWidth={2.5} />
+            <span>{downRate.value} {downRate.unit}</span>
+          </div>
+        </div>
+      </td>
+
+      {/* Total Traffic */}
+      <td className="px-4 py-3 align-middle">
+        <div className="flex flex-col gap-1">
+          <div className="text-[11px] text-[var(--text-secondary)]">
+            <span className="text-[var(--text-tertiary)] mr-1">出</span>
+            {formatBytes(node.trafficUp)}
+          </div>
+          <div className="text-[11px] text-[var(--text-secondary)]">
+            <span className="text-[var(--text-tertiary)] mr-1">入</span>
+            {formatBytes(node.trafficDown)}
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+});
