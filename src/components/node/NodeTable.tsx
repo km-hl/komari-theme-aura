@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useNode } from "@/hooks/useNode";
 import { Flag } from "@/components/ui/Flag";
+import { OsIcon } from "@/components/ui/OsIcon";
 import { clsx } from "clsx";
 import {
   formatBytes,
@@ -33,11 +34,11 @@ export function NodeTable({ uuids }: NodeTableProps) {
         <thead>
           <tr className="border-b border-[var(--border-subtle)] text-[13px] text-[var(--text-tertiary)]">
             <th className="font-medium px-4 py-3 w-[18%]">节点名称</th>
-            <th className="font-medium px-4 py-3 w-[10%]">操作系统</th>
+            <th className="font-medium px-4 py-3 text-center w-[10%]">操作系统</th>
             <th className="font-medium px-4 py-3 w-[8%]">状态</th>
-            <th className="font-medium px-4 py-3 w-[8%]">CPU</th>
-            <th className="font-medium px-4 py-3 w-[12%]">内存</th>
-            <th className="font-medium px-4 py-3 w-[12%]">磁盘</th>
+            <th className="font-medium px-4 py-3 text-center w-[8%]">CPU</th>
+            <th className="font-medium px-4 py-3 text-center w-[12%]">内存</th>
+            <th className="font-medium px-4 py-3 text-center w-[12%]">磁盘</th>
             <th className="font-medium px-4 py-3 w-[12%]">价格信息</th>
             <th className="font-medium px-4 py-3 w-[10%]">实时网络</th>
             <th className="font-medium px-4 py-3 w-[10%]">总传输量</th>
@@ -94,9 +95,9 @@ const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
       </td>
 
       {/* OS */}
-      <td className="px-4 py-3 align-middle">
-        <span className="text-[13px] text-[var(--text-secondary)] truncate max-w-[80px] block" title={node.os}>
-          {node.os || "-"}
+      <td className="px-4 py-3 align-middle text-center text-[var(--text-secondary)]">
+        <span className="inline-block" title={node.os || "-"}>
+          <OsIcon os={node.os} className="w-5 h-5 mx-auto" />
         </span>
       </td>
 
@@ -120,36 +121,42 @@ const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
 
       {/* CPU */}
       <td className="px-4 py-3 align-middle">
-        <div className="flex flex-col gap-1 w-full max-w-[60px]">
-          <div className="text-[12px] text-[var(--text-primary)] font-medium tabular-nums">{node.cpuPct.toFixed(0)}%</div>
-          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
-            <div className="h-full bg-[var(--progress-cpu)]" style={{ width: `${Math.min(100, node.cpuPct)}%` }} />
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="h-[6px] w-12 bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--text-primary)] rounded-full" style={{ width: `${Math.min(100, node.cpuPct)}%` }} />
+          </div>
+          <div className="text-[12px] font-bold text-[#3b82f6] tabular-nums leading-none">
+            {node.cpuPct.toFixed(0)}%
           </div>
         </div>
       </td>
 
       {/* RAM */}
       <td className="px-4 py-3 align-middle">
-        <div className="flex flex-col gap-1 w-full max-w-[100px]">
-          <div className="flex justify-between items-center text-[11px] text-[var(--text-secondary)] tabular-nums">
-            <span>{node.ramPct.toFixed(0)}%</span>
-            <span>{formatBytes(node.ramUsed)} / {formatBytes(node.ramTotal)}</span>
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="h-[6px] w-12 bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--text-primary)] rounded-full" style={{ width: `${Math.min(100, node.ramPct)}%` }} />
           </div>
-          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
-            <div className="h-full bg-[var(--progress-memory)]" style={{ width: `${Math.min(100, node.ramPct)}%` }} />
+          <div className="text-[12px] font-bold text-[#3b82f6] tabular-nums leading-none">
+            {node.ramPct.toFixed(0)}%
+          </div>
+          <div className="text-[11px] text-[var(--text-tertiary)] tabular-nums leading-none scale-90 whitespace-nowrap">
+            {formatBytes(node.ramUsed)} / {formatBytes(node.ramTotal)}
           </div>
         </div>
       </td>
 
       {/* Disk */}
       <td className="px-4 py-3 align-middle">
-        <div className="flex flex-col gap-1 w-full max-w-[100px]">
-          <div className="flex justify-between items-center text-[11px] text-[var(--text-secondary)] tabular-nums">
-            <span>{node.diskPct.toFixed(0)}%</span>
-            <span>{formatBytes(node.diskUsed)} / {formatBytes(node.diskTotal)}</span>
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="h-[6px] w-12 bg-[var(--progress-bg)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--text-primary)] rounded-full" style={{ width: `${Math.min(100, node.diskPct)}%` }} />
           </div>
-          <div className="h-1.5 w-full bg-[var(--progress-bg)] rounded-full overflow-hidden">
-            <div className="h-full bg-[var(--progress-disk)]" style={{ width: `${Math.min(100, node.diskPct)}%` }} />
+          <div className="text-[12px] font-bold text-[#3b82f6] tabular-nums leading-none">
+            {node.diskPct.toFixed(0)}%
+          </div>
+          <div className="text-[11px] text-[var(--text-tertiary)] tabular-nums leading-none scale-90 whitespace-nowrap">
+            {formatBytes(node.diskUsed)} / {formatBytes(node.diskTotal)}
           </div>
         </div>
       </td>
