@@ -48,7 +48,7 @@ export function Dashboard() {
         </div>
 
         {/* Regions Card */}
-        <div className="card-base p-5 flex flex-col justify-between rounded-xl relative overflow-hidden group">
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
             <MapPin size={16} />
           </div>
@@ -61,7 +61,7 @@ export function Dashboard() {
         </div>
 
         {/* Traffic & Speed Card */}
-        <div className="card-base p-5 flex flex-col justify-between rounded-xl relative overflow-hidden group">
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
             <Server size={16} />
           </div>
