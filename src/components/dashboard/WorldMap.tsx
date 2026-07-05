@@ -125,7 +125,7 @@ export default function WorldMap() {
               }
             </Geographies>
             {/* Render markers for microstates that are active but not on the map */}
-            {Array.from(regionStatusMap.entries()).map(([id, status]) => {
+            {Array.from(regionStatusMap.entries()).map(([id]) => {
               const coords = microstateCoords[id];
               if (coords) {
                 return (
