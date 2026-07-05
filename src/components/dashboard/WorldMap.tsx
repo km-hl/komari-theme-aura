@@ -8,6 +8,7 @@ import {
   Geography,
   Graticule,
   ZoomableGroup,
+  Marker,
 } from "react-simple-maps";
 
 import { resolveFlagCode } from "@/components/ui/Flag";
@@ -26,6 +27,16 @@ const alpha2ToNumeric: Record<string, string> = {
   TR: "792", IL: "376", MX: "484", AR: "032", CL: "152",
   CO: "170", NZ: "554", IE: "372", PT: "620", GR: "300",
   BE: "056", LU: "442", MO: "446", UA: "804", EG: "818"
+};
+
+// Coordinates [longitude, latitude] for small regions often missing from 110m map
+const microstateCoords: Record<string, [number, number]> = {
+  "344": [114.1694, 22.3193], // Hong Kong
+  "702": [103.8198, 1.3521],  // Singapore
+  "446": [113.5439, 22.1987], // Macau
+  "048": [50.5577, 26.0667],  // Bahrain
+  "470": [14.3754, 35.9375],  // Malta
+  "492": [7.4246, 43.7384],   // Monaco
 };
 
 export default function WorldMap() {
@@ -113,6 +124,18 @@ export default function WorldMap() {
                 ))
               }
             </Geographies>
+            {/* Render markers for microstates that are active but not on the map */}
+            {Array.from(regionStatusMap.entries()).map(([id, status]) => {
+              const coords = microstateCoords[id];
+              if (coords) {
+                return (
+                  <Marker key={`marker-${id}`} coordinates={coords}>
+                    <circle r={2.5} fill={getColor(id)} stroke="var(--surface)" strokeWidth={0.5} />
+                  </Marker>
+                );
+              }
+              return null;
+            })}
           </ZoomableGroup>
         </ComposableMap>
 
