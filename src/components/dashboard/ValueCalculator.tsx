@@ -1,55 +1,7 @@
-import { useEffect, useState, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { X, RefreshCw, Calculator } from "lucide-react";
-import { getSnapshot, subscribe } from "@/services/wsStore";
-import { useVisibleNodeUuids } from "@/hooks/useNode";
 import { clsx } from "clsx";
-
-const TARGET_CURRENCIES = ["USD", "CNY", "EUR", "GBP"] as const;
-type TargetCurrency = typeof TARGET_CURRENCIES[number];
-
-interface ExchangeRates {
-  base: string;
-  date: string;
-  rates: Record<string, number>;
-}
-
-function parseCycleDays(cycle: string | null | undefined): number {
-  if (!cycle) return 0;
-  const c = cycle.toLowerCase().trim();
-  if (c === "monthly" || c === "月付") return 30;
-  if (c === "quarterly" || c === "季付") return 90;
-  if (c === "half-yearly" || c === "半年付") return 180;
-  if (c === "yearly" || c === "年付") return 365;
-  if (c === "two-yearly" || c === "两年付") return 730;
-  if (c === "three-yearly" || c === "三年付") return 1095;
-  const num = parseInt(c, 10);
-  if (!isNaN(num) && num > 0) return num;
-  return 0;
-}
-
-function getRemainingDays(expiredAt: string | null | undefined): number {
-  if (!expiredAt) return 0;
-  let date: Date;
-  if (/^\d+$/.test(expiredAt)) {
-    const num = parseInt(expiredAt, 10);
-    date = new Date(num < 1e11 ? num * 1000 : num);
-  } else {
-    date = new Date(expiredAt);
-  }
-  const diff = date.getTime() - Date.now();
-  return diff > 0 ? diff / (1000 * 60 * 60 * 24) : 0;
-}
-
-function normalizeCurrency(c: string | null | undefined): string {
-  if (!c) return "CNY";
-  const upper = c.trim().toUpperCase();
-  if (upper.includes("CNY") || upper.includes("￥") || upper.includes("RMB")) return "CNY";
-  if (upper.includes("USD") || upper.includes("$")) return "USD";
-  if (upper.includes("EUR") || upper.includes("€")) return "EUR";
-  if (upper.includes("GBP") || upper.includes("£")) return "GBP";
-  if (upper.includes("JPY") || upper.includes("¥")) return "JPY";
-  return upper.substring(0, 3) || "CNY";
-}
+import { useValueStats, TARGET_CURRENCIES, TargetCurrency } from "@/hooks/useValueStats";
 
 interface ValueCalculatorProps {
   isOpen: boolean;
@@ -58,128 +10,28 @@ interface ValueCalculatorProps {
 
 export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
   const [targetCurrency, setTargetCurrency] = useState<TargetCurrency>("CNY");
-  const [ratesData, setRatesData] = useState<ExchangeRates | null>(null);
-  const [loadingRates, setLoadingRates] = useState(false);
-  const [errorRates, setErrorRates] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<"all" | "valid" | "invalid" | "expired">("all");
 
-  const visibleUuids = useVisibleNodeUuids();
-  const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  const fetchRates = async () => {
-    setLoadingRates(true);
-    setErrorRates(null);
-    try {
-      const res = await fetch("https://open.er-api.com/v6/latest/USD");
-      if (!res.ok) throw new Error("Network response was not ok");
-      const data = await res.json();
-      setRatesData({
-        base: data.base_code,
-        date: new Date().toLocaleString(undefined, { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit', 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-        rates: data.rates
-      });
-    } catch (e) {
-      setErrorRates("获取汇率失败，部分货币可能无法换算");
-    } finally {
-      setLoadingRates(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen && !ratesData && !loadingRates) {
-      fetchRates();
-    }
-  }, [isOpen]);
-
-  const convertCurrency = (amount: number, from: string, to: string) => {
-    if (from === to) return amount;
-    if (!ratesData) return amount; // Fallback if rates failed
-    const rates = ratesData.rates;
-    const base = ratesData.base;
-    let amountInBase = amount;
-    if (from !== base) {
-      const fromRate = rates[from];
-      if (!fromRate) return 0; // Unsupported currency
-      amountInBase = amount / fromRate;
-    }
-    if (to === base) return amountInBase;
-    const toRate = rates[to];
-    if (!toRate) return 0;
-    return amountInBase * toRate;
-  };
-
-  const nodeStats = useMemo(() => {
-    const validNodes: any[] = [];
-    const invalidNodes: any[] = [];
-    const expiredNodes: any[] = [];
-
-    let totalResidual = 0;
-    let totalValue = 0;
-    let totalMonthlyCost = 0;
-
-    for (const uuid of visibleUuids) {
-      const node = snap.byUuid[uuid];
-      if (!node) continue;
-      
-      const price = node.price || 0;
-      const cycleDays = parseCycleDays(node.billing_cycle);
-      const remainingDays = getRemainingDays(node.expired_at);
-      const currency = normalizeCurrency(node.currency);
-
-      if (price <= 0 || cycleDays <= 0) {
-        invalidNodes.push({ node, reason: "缺失价格或周期" });
-        continue;
-      }
-      
-      const convertedPrice = convertCurrency(price, currency, targetCurrency);
-      if (convertedPrice === 0 && currency !== targetCurrency) {
-        invalidNodes.push({ node, reason: `不支持的货币: ${currency}` });
-        continue;
-      }
-
-      if (remainingDays <= 0) {
-        expiredNodes.push({ node, convertedPrice, cycleDays });
-        continue;
-      }
-
-      const dailyCost = convertedPrice / cycleDays;
-      const residualValue = dailyCost * remainingDays;
-      const monthlyCost = dailyCost * 30;
-
-      totalResidual += residualValue;
-      totalValue += convertedPrice;
-      totalMonthlyCost += monthlyCost;
-
-      validNodes.push({
-        node,
-        convertedPrice,
-        cycleDays,
-        remainingDays,
-        residualValue,
-        currency,
-        price
-      });
-    }
-    
-    // Sort valid nodes by residual value descending
-    validNodes.sort((a, b) => b.residualValue - a.residualValue);
-
-    return { validNodes, invalidNodes, expiredNodes, totalResidual, totalValue, totalMonthlyCost };
-  }, [visibleUuids, snap.byUuid, targetCurrency, ratesData]);
+  const {
+    ratesData,
+    loadingRates,
+    errorRates,
+    triggerFetchRates,
+    validNodes,
+    invalidNodes,
+    expiredNodes,
+    totalResidual,
+    totalValue,
+    totalMonthlyCost
+  } = useValueStats(targetCurrency);
 
   if (!isOpen) return null;
 
   const currentList = 
-    filterType === "all" ? [...nodeStats.validNodes, ...nodeStats.invalidNodes, ...nodeStats.expiredNodes] :
-    filterType === "valid" ? nodeStats.validNodes :
-    filterType === "invalid" ? nodeStats.invalidNodes :
-    nodeStats.expiredNodes;
+    filterType === "all" ? [...validNodes, ...invalidNodes, ...expiredNodes] :
+    filterType === "valid" ? validNodes :
+    filterType === "invalid" ? invalidNodes :
+    expiredNodes;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={onClose}>
@@ -214,7 +66,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button 
-                onClick={fetchRates} 
+                onClick={triggerFetchRates} 
                 disabled={loadingRates}
                 className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 whitespace-nowrap"
               >
@@ -222,15 +74,15 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 刷新汇率
               </button>
 
-              <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg p-1 gap-1">
+              <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1 gap-1 shadow-sm">
                 {TARGET_CURRENCIES.map(c => (
                   <button
                     key={c}
                     onClick={() => setTargetCurrency(c)}
                     className={clsx(
-                      "px-2.5 py-1 text-[12px] font-medium rounded-md transition-all whitespace-nowrap",
+                      "px-3.5 py-1 text-[11px] font-bold rounded-full transition-all whitespace-nowrap tracking-wide",
                       targetCurrency === c 
-                        ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
+                        ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
                     )}
                   >
@@ -246,19 +98,19 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-5 shadow-sm">
               <div className="text-[13px] text-[var(--text-secondary)] mb-1">全部剩余价值</div>
               <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {targetCurrency} {nodeStats.totalResidual.toFixed(2)}
+                {targetCurrency} {totalResidual.toFixed(2)}
               </div>
             </div>
             <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-5 shadow-sm">
               <div className="text-[13px] text-[var(--text-secondary)] mb-1">总价值</div>
               <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {targetCurrency} {nodeStats.totalValue.toFixed(2)}
+                {targetCurrency} {totalValue.toFixed(2)}
               </div>
             </div>
             <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl p-5 shadow-sm">
               <div className="text-[13px] text-[var(--text-secondary)] mb-1">月成本</div>
               <div className="text-2xl font-bold text-[var(--text-primary)]">
-                {targetCurrency} {nodeStats.totalMonthlyCost.toFixed(2)}
+                {targetCurrency} {totalMonthlyCost.toFixed(2)}
               </div>
             </div>
           </div>
@@ -266,10 +118,10 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
           {/* Tabs */}
           <div className="flex items-center gap-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1 w-fit">
             {[
-              { id: "all", label: "全部", count: nodeStats.validNodes.length + nodeStats.invalidNodes.length + nodeStats.expiredNodes.length },
-              { id: "valid", label: "可计算", count: nodeStats.validNodes.length },
-              { id: "invalid", label: "未纳入", count: nodeStats.invalidNodes.length },
-              { id: "expired", label: "已过期", count: nodeStats.expiredNodes.length },
+              { id: "all", label: "全部", count: validNodes.length + invalidNodes.length + expiredNodes.length },
+              { id: "valid", label: "可计算", count: validNodes.length },
+              { id: "invalid", label: "未纳入", count: invalidNodes.length },
+              { id: "expired", label: "已过期", count: expiredNodes.length },
             ].map(tab => (
               <button
                 key={tab.id}

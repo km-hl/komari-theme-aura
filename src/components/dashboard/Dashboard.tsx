@@ -3,10 +3,14 @@ import { Clock, Server, Activity, ArrowUp, ArrowDown, Map } from "lucide-react";
 import { useGlobalStats } from "@/hooks/useNode";
 import { formatBytes } from "@/utils/format";
 import WorldMap from "./WorldMap";
+import { useValueStats } from "@/hooks/useValueStats";
+import { clsx } from "clsx";
 
 export function Dashboard() {
   const stats = useGlobalStats();
+  const { totalResidual, totalMonthlyCost, loadingRates } = useValueStats("CNY");
   const [showMap, setShowMap] = useState(false);
+  const [isYearlyCost, setIsYearlyCost] = useState(false);
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -21,7 +25,7 @@ export function Dashboard() {
   return (
     <div className="mb-6">
       <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">仪表盘</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         
         {/* Time Card */}
         <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
@@ -102,6 +106,39 @@ export function Dashboard() {
               </div>
               <div className="text-[12px] text-[var(--text-secondary)] font-medium">当前速率</div>
             </div>
+          </div>
+        </div>
+
+        {/* Residual Value Card */}
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
+          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
+            <span className="font-bold">¥</span>
+          </div>
+          <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
+            {loadingRates ? "-" : totalResidual.toFixed(0)}
+          </div>
+          <div className="text-[13px] text-[var(--text-secondary)] font-medium">
+            总剩余价值 (CNY)
+          </div>
+        </div>
+
+        {/* Cost Card */}
+        <div 
+          className="server-card p-5 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-[var(--color-primary)] transition-colors"
+          onClick={() => setIsYearlyCost(!isYearlyCost)}
+          title="点击切换 月/年 成本"
+        >
+          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 group-hover:text-[var(--color-primary)] transition-all">
+            <span className="font-bold">¥</span>
+          </div>
+          <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
+            {loadingRates ? "-" : isYearlyCost ? (totalMonthlyCost * 12).toFixed(0) : totalMonthlyCost.toFixed(0)}
+          </div>
+          <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center gap-1.5">
+            {isYearlyCost ? "年成本" : "月成本"} (CNY)
+            <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)]">
+              切换{isYearlyCost ? "月" : "年"}
+            </span>
           </div>
         </div>
 

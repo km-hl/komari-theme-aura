@@ -51,7 +51,34 @@ const countryCentroids: Record<string, [number, number]> = {
 export default function WorldMap() {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState({ x: 0, y: -10 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragStart({ x: clientX, y: clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
+    
+    setRotation(r => ({
+      x: (r.x + deltaX * 0.4) % 360,
+      y: Math.max(-80, Math.min(80, r.y - deltaY * 0.4))
+    }));
+    setDragStart({ x: clientX, y: clientY });
+  };
 
   useEffect(() => {
     let frameId: number;
@@ -59,15 +86,17 @@ export default function WorldMap() {
     
     const updateRotation = (time: number) => {
       const delta = time - lastTime;
-      if (delta > 30) { // Limit to ~30 FPS to save CPU
-        setRotation((r) => (r + 0.2) % 360);
+      if (delta > 30) {
+        if (!isDragging) {
+          setRotation((r) => ({ ...r, x: (r.x + 0.2) % 360 }));
+        }
         lastTime = time;
       }
       frameId = requestAnimationFrame(updateRotation);
     };
     frameId = requestAnimationFrame(updateRotation);
     return () => cancelAnimationFrame(frameId);
-  }, []);
+  }, [isDragging]);
 
   // Determine status per country code
   const regionStatusMap = useMemo(() => {
@@ -106,10 +135,10 @@ export default function WorldMap() {
     return statusMap;
   }, [visibleUuids, snap.byUuid]);
 
-  const isVisible = (coords: [number, number], currentRotation: number) => {
+  const isVisible = (coords: [number, number], currentRotation: { x: number, y: number }) => {
     const [lon, lat] = coords;
-    const centerLon = currentRotation;
-    const centerLat = 10;
+    const centerLon = currentRotation.x;
+    const centerLat = currentRotation.y;
     
     const rad = Math.PI / 180;
     const lat1 = lat * rad;
@@ -133,16 +162,25 @@ export default function WorldMap() {
 
   return (
     <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center">
-      <div className="w-full max-w-[800px] aspect-[2/1] relative">
+      <div 
+        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onTouchStart={handleMouseDown}
+        onTouchEnd={handleMouseUp}
+        onTouchMove={handleMouseMove}
+      >
         <ComposableMap
           projection="geoOrthographic"
-          projectionConfig={{ scale: 190, rotate: [-rotation, -10, 0] }}
+          projectionConfig={{ scale: 190, rotate: [-rotation.x, -rotation.y, 0] }}
           width={800}
           height={400}
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", pointerEvents: "none" }}
         >
-          <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="#0ea5e9" fillOpacity={0.05} />
-          <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.3} />
+          <Sphere id="sphere" stroke="var(--border-subtle)" strokeWidth={0.5} fill="var(--bg-card)" />
+          <Graticule stroke="var(--border-subtle)" strokeWidth={0.5} opacity={0.5} />
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -171,14 +209,12 @@ export default function WorldMap() {
             if (coords && isVisible(coords, rotation)) {
               return (
                 <Marker key={`marker-${code}`} coordinates={coords}>
-                  <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>
-                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                      <div style={{ position: 'absolute', width: '20px', height: '14px', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                  <foreignObject x="-25" y="-14" width="50" height="28" style={{ overflow: 'visible' }}>
+                    <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full px-1.5 py-0.5 shadow-md w-max gap-1.5 absolute left-1/2 -translate-x-1/2">
+                      <div className="w-3.5 h-3.5 flex items-center justify-center overflow-hidden rounded-sm">
                         <Flag region={code} size={14} />
                       </div>
-                      <div style={{ position: 'absolute', top: '-6px', left: '12px', background: 'var(--surface)', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '9px', padding: '0 4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                        {data.count}
-                      </div>
+                      <span className="text-[10px] font-bold text-[var(--text-primary)] leading-none pt-px pr-0.5">{data.count}</span>
                     </div>
                   </foreignObject>
                 </Marker>
