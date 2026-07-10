@@ -61,6 +61,7 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
     const apis = [
       "https://api.exchangerate-api.com/v4/latest/USD",
       "https://open.er-api.com/v6/latest/USD",
+      "https://api.frankfurter.dev/v1/rates?base=USD",
       "https://api.frankfurter.app/latest?from=USD",
       "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
     ];
@@ -71,6 +72,13 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
+          // Normalize frankfurter v2 API array structure
+          if (Array.isArray(data)) {
+            return {
+              date: data[0]?.date,
+              rates: Object.fromEntries(data.map((item: any) => [item.quote, item.rate]))
+            };
+          }
           // Normalize fawazahmed0 API structure
           if (data.usd && !data.rates) {
             data.rates = data.usd;

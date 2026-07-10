@@ -162,7 +162,7 @@ export function getChartTooltipPosition({
   return { left, top };
 }
 
-export function useResponsiveChartSize(mode: "grid" | "wide", containerRef?: React.RefObject<HTMLElement>) {
+export function useResponsiveChartSize(mode: "grid" | "wide", containerRef?: any) {
   const [size, setSize] = useState(
     mode === "grid"
       ? GRID_CHART_DEFAULT
