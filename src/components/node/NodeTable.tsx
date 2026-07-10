@@ -226,7 +226,7 @@ const NodeTableRow = memo(function NodeTableRow({ uuid }: { uuid: string }) {
         <td colSpan={10} className="p-4 border-b border-[var(--border-subtle)]">
           <div className="flex flex-col gap-4">
             <InstanceDetails uuid={uuid} />
-            <div className="h-[260px] w-full">
+            <div className="w-full py-2">
               <LoadChart uuid={uuid} hours={24} active={true} />
             </div>
           </div>
