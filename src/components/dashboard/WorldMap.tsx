@@ -242,10 +242,11 @@ export default function WorldMap() {
             return null;
           })}
         </ComposableMap>
+      </div>
 
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)]">
-          <div className="flex items-center gap-2">
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)] pointer-events-none">
+        <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-success)]"></div>
             全部在线
           </div>
@@ -258,7 +259,6 @@ export default function WorldMap() {
             全部离线
           </div>
         </div>
-      </div>
     </div>
   );
 }

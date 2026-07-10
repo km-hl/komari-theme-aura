@@ -199,7 +199,16 @@ export function useValueStats(targetCurrency: TargetCurrency) {
       }
 
       const dailyCost = convertedPrice / cycleDays;
-      const monthlyCost = dailyCost * 30;
+      
+      let yearlyCost = dailyCost * 365;
+      if (cycleDays === 30) yearlyCost = convertedPrice * 12;
+      else if (cycleDays === 90) yearlyCost = convertedPrice * 4;
+      else if (cycleDays === 180) yearlyCost = convertedPrice * 2;
+      else if (cycleDays === 365) yearlyCost = convertedPrice;
+      else if (cycleDays === 730) yearlyCost = convertedPrice / 2;
+      else if (cycleDays === 1095) yearlyCost = convertedPrice / 3;
+      
+      const monthlyCost = yearlyCost / 12;
 
       // Calculate residual value
       let residualValue = dailyCost * remainingDays;

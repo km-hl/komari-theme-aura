@@ -182,8 +182,14 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             )}
             {currentList.map((item: any, i) => {
               const dailyCost = item.price / item.cycleDays;
-              const originalMonthly = dailyCost * 30;
-              const originalYearly = dailyCost * 365;
+              let originalYearly = dailyCost * 365;
+              if (item.cycleDays === 30) originalYearly = item.price * 12;
+              else if (item.cycleDays === 90) originalYearly = item.price * 4;
+              else if (item.cycleDays === 180) originalYearly = item.price * 2;
+              else if (item.cycleDays === 365) originalYearly = item.price;
+              else if (item.cycleDays === 730) originalYearly = item.price / 2;
+              else if (item.cycleDays === 1095) originalYearly = item.price / 3;
+              const originalMonthly = originalYearly / 12;
               let targetMonthly = 0;
               let targetYearly = 0;
               
