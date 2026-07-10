@@ -154,7 +154,7 @@ export function useValueStats(targetCurrency: TargetCurrency) {
   };
 
   useEffect(() => {
-    if (!ratesData && !loadingRates) {
+    if (!ratesData) {
       triggerFetchRates();
     }
   }, [config]);
