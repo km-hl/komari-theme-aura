@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Monitor, Globe2, ShieldCheck, Clock, MapPin, Search } from "lucide-react";
-import { clsx } from "clsx";
+import { Monitor, ShieldCheck, Clock, MapPin, Search } from "lucide-react";
 
 export function VisitorCard() {
   const [visitor, setVisitor] = useState<{

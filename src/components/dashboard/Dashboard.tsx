@@ -8,7 +8,8 @@ import { VisitorCard } from "./VisitorCard";
 
 export function Dashboard() {
   const stats = useGlobalStats();
-  const { totalResidual, totalMonthlyCost, loadingRates } = useValueStats("CNY");
+  const [currency, setCurrency] = useState<"CNY" | "USD">("CNY");
+  const { totalResidual, totalMonthlyCost, loadingRates } = useValueStats(currency);
   const [showMap, setShowMap] = useState(false);
   const [isYearlyCost, setIsYearlyCost] = useState(false);
   const [time, setTime] = useState(new Date());
@@ -112,13 +113,13 @@ export function Dashboard() {
         {/* Residual Value Card */}
         <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
-            <span className="font-bold">¥</span>
+            <span className="font-bold">{currency === "CNY" ? "¥" : "$"}</span>
           </div>
           <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
             {loadingRates ? "-" : totalResidual.toFixed(0)}
           </div>
           <div className="text-[13px] text-[var(--text-secondary)] font-medium">
-            总剩余价值 (CNY)
+            总剩余价值 ({currency})
           </div>
         </div>
 
@@ -128,14 +129,21 @@ export function Dashboard() {
           onClick={() => setIsYearlyCost(!isYearlyCost)}
           title="点击切换 月/年 成本"
         >
-          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 group-hover:text-[var(--color-primary)] transition-all">
-            <span className="font-bold">¥</span>
+          <div 
+            className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 group-hover:text-[var(--color-primary)] transition-all z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrency(c => c === "CNY" ? "USD" : "CNY");
+            }}
+            title="点击切换币种"
+          >
+            <span className="font-bold">{currency === "CNY" ? "¥" : "$"}</span>
           </div>
           <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
             {loadingRates ? "-" : isYearlyCost ? (totalMonthlyCost * 12).toFixed(0) : totalMonthlyCost.toFixed(0)}
           </div>
           <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center gap-1.5">
-            {isYearlyCost ? "年成本" : "月成本"} (CNY)
+            {isYearlyCost ? "年成本" : "月成本"} ({currency})
             <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)]">
               切换{isYearlyCost ? "月" : "年"}
             </span>
