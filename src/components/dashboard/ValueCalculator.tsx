@@ -174,14 +174,12 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                       </div>
                       <div>
                         剩余时间 {
-                          Math.max(0, Math.floor((item.node.expired_at * 1000 - Date.now()) / (1000 * 60 * 60 * 24)))
-                        } 天 {
-                          Math.max(0, Math.floor(((item.node.expired_at * 1000 - Date.now()) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-                        } 小时
+                          Math.floor(getRemainingDays(item.node.expired_at))
+                        } 天
                       </div>
                       <div>
                         原币种价值 {item.currency} {(() => {
-                          const remainDays = Math.max(0, (item.node.expired_at * 1000 - Date.now()) / (1000 * 60 * 60 * 24));
+                          const remainDays = getRemainingDays(item.node.expired_at);
                           const dailyCost = item.price / item.cycleDays;
                           return (dailyCost * remainDays).toFixed(2);
                         })()}

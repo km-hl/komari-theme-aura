@@ -42,11 +42,11 @@ export function getRemainingDays(expiredAt: string | null | undefined): number {
 export function normalizeCurrency(c: string | null | undefined): string {
   if (!c) return "CNY";
   const upper = c.trim().toUpperCase();
-  if (upper.includes("CNY") || upper.includes("￥") || upper.includes("RMB")) return "CNY";
+  if (upper.includes("CNY") || upper.includes("￥") || upper.includes("¥") || upper.includes("RMB")) return "CNY";
   if (upper.includes("USD") || upper.includes("$")) return "USD";
   if (upper.includes("EUR") || upper.includes("€")) return "EUR";
   if (upper.includes("GBP") || upper.includes("£")) return "GBP";
-  if (upper.includes("JPY") || upper.includes("¥")) return "JPY";
+  if (upper.includes("JPY")) return "JPY";
   return upper.substring(0, 3) || "CNY";
 }
 

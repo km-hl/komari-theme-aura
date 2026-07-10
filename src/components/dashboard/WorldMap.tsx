@@ -59,6 +59,10 @@ export default function WorldMap() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
+    // Prevent text selection only for mouse events (touch prevents break scrolling)
+    if (e.type === 'mousedown') {
+      e.preventDefault();
+    }
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     setDragStart({ x: clientX, y: clientY });
@@ -76,18 +80,18 @@ export default function WorldMap() {
     const deltaY = clientY - dragStart.y;
     
     setRotation(r => ({
-      x: (r.x - (deltaX * 0.4) / zoom) % 360,
-      y: Math.max(-80, Math.min(80, r.y + (deltaY * 0.4) / zoom))
+      x: (r.x + (deltaX * 0.4) / zoom) % 360,
+      y: Math.max(-80, Math.min(80, r.y - (deltaY * 0.4) / zoom))
     }));
     setDragStart({ x: clientX, y: clientY });
   };
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = containerRef.current?.parentElement;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      setZoom(z => Math.min(Math.max(1, z - e.deltaY * 0.002), 5));
+      setZoom(z => Math.min(Math.max(1, z - e.deltaY * 0.002), 3));
     };
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
@@ -177,7 +181,7 @@ export default function WorldMap() {
     <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center">
       <div 
         ref={containerRef}
-        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing transition-transform duration-75"
+        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing transition-transform duration-75 select-none"
         style={{ transform: `scale(${zoom})`, transformOrigin: "center center", touchAction: "none" }}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
