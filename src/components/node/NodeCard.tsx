@@ -181,8 +181,8 @@ export const NodeCard = memo(function NodeCard({
         <header className="flex items-center justify-between gap-4 mb-5 lg:mb-6">
           <div className="server-card-title-block">
             <div className="server-card-title-row">
-              <Flag region={node.region} size={18} />
-              <OsIcon os={node.os} className="w-[18px] h-[18px] text-[var(--text-tertiary)]" />
+              <Flag region={node.region} size={22} />
+              <OsIcon os={node.os} className="w-[22px] h-[22px] text-[var(--text-tertiary)]" />
               <Link
                 to={`/instance/${node.uuid}`}
                 className="server-card-title-link"
