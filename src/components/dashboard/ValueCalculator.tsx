@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, RefreshCw, Calculator } from "lucide-react";
+import { X, RefreshCw, Calculator, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { useValueStats, TARGET_CURRENCIES, type TargetCurrency, getRemainingDays } from "@/hooks/useValueStats";
 
@@ -194,29 +194,37 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
               }
 
               return (
-                <div key={i} className="flex flex-col p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]">
+                <div key={i} className={clsx(
+                  "flex flex-col p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]",
+                  item.reason && "opacity-70"
+                )}>
                   <div className="flex justify-between items-start mb-4">
                     <div className="font-medium text-[15px] text-[var(--text-primary)]">{item.node.name}</div>
                     
-                    {view === "residual" ? (
-                      <div className="font-bold text-[15px] text-[var(--text-primary)]">
-                        {targetCurrency} {loadingRates ? "-" : item.convertedPrice?.toFixed(2) || (item.convertedPrice === 0 ? "0.00" : "-")}
-                      </div>
-                    ) : (
-                      <div className="text-right">
+                    {!item.reason && (
+                      view === "residual" ? (
                         <div className="font-bold text-[15px] text-[var(--text-primary)]">
-                          {targetCurrency} {loadingRates ? "-" : targetMonthly ? targetMonthly.toFixed(2) : "-"} / 月
+                          {targetCurrency} {loadingRates ? "-" : item.convertedPrice?.toFixed(2) || (item.convertedPrice === 0 ? "0.00" : "-")}
                         </div>
-                        <div className="text-[13px] text-[var(--text-secondary)] mt-0.5">
-                          {targetCurrency} {loadingRates ? "-" : targetYearly ? targetYearly.toFixed(2) : "-"} / 年
+                      ) : (
+                        <div className="text-right">
+                          <div className="font-bold text-[15px] text-[var(--text-primary)]">
+                            {targetCurrency} {loadingRates ? "-" : targetMonthly ? targetMonthly.toFixed(2) : "0.00"} <span className="text-[12px] text-[var(--text-tertiary)] font-normal">/ 月</span>
+                          </div>
+                          <div className="text-[13px] text-[var(--text-secondary)] mt-0.5">
+                            {targetCurrency} {loadingRates ? "-" : targetYearly ? targetYearly.toFixed(2) : "0.00"} <span className="text-[11px] text-[var(--text-tertiary)] font-normal">/ 年</span>
+                          </div>
                         </div>
-                      </div>
+                      )
                     )}
                   </div>
                   
                   <div className="space-y-1.5 text-[13px] text-[var(--text-tertiary)]">
                     {item.reason ? (
-                       <div className="text-red-400">无法计算: {item.reason}</div>
+                       <div className="flex items-center gap-1.5 text-red-400/90 mt-2">
+                         <AlertCircle size={14} />
+                         <span>无法计算: {item.reason}</span>
+                       </div>
                     ) : (
                       <>
                         <div>

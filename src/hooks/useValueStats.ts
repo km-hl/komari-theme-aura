@@ -201,16 +201,11 @@ export function useValueStats(targetCurrency: TargetCurrency) {
       const dailyCost = convertedPrice / cycleDays;
       const monthlyCost = dailyCost * 30;
 
-      // Exclude long-term/lifetime items from residual value
-      let residualValue = 0;
-      if (cycleDays > 1000 || remainingDays > 1500) {
-        invalidNodes.push({ node, reason: "长期合约不纳入计算" });
-        continue; // Do not add to validNodes, so it won't add to cost either
-      } else {
-        residualValue = dailyCost * remainingDays;
-        totalResidual += residualValue;
-        totalValue += convertedPrice;
-        totalMonthlyCost += monthlyCost;
+      // Calculate residual value
+      let residualValue = dailyCost * remainingDays;
+      totalResidual += residualValue;
+      totalValue += convertedPrice;
+      totalMonthlyCost += monthlyCost;
 
         validNodes.push({
           node,
