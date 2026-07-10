@@ -409,6 +409,8 @@ export function ThemeManage() {
                >
                  恢复默认
                </button>
+             )}
+          </div>
         </div>
       </InstancePanel>
 
