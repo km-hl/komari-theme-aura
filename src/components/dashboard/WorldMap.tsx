@@ -7,7 +7,6 @@ import {
   Geographies,
   Geography,
   Graticule,
-  ZoomableGroup,
   Marker,
   Sphere,
 } from "react-simple-maps";
@@ -56,8 +55,14 @@ export default function WorldMap() {
 
   useEffect(() => {
     let frameId: number;
-    const updateRotation = () => {
-      setRotation((r) => (r + 0.3) % 360);
+    let lastTime = performance.now();
+    
+    const updateRotation = (time: number) => {
+      const delta = time - lastTime;
+      if (delta > 30) { // Limit to ~30 FPS to save CPU
+        setRotation((r) => (r + 0.2) % 360);
+        lastTime = time;
+      }
       frameId = requestAnimationFrame(updateRotation);
     };
     frameId = requestAnimationFrame(updateRotation);
@@ -127,62 +132,60 @@ export default function WorldMap() {
   };
 
   return (
-    <div className="relative w-full overflow-hidden server-card mt-6 p-4">
-      <div className="w-full aspect-[2.2/1] relative">
+    <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center">
+      <div className="w-full max-w-[800px] aspect-[2/1] relative">
         <ComposableMap
           projection="geoOrthographic"
           projectionConfig={{ scale: 190, rotate: [-rotation, -10, 0] }}
           width={800}
           height={400}
-          style={{ width: "100%", height: "100%", cursor: "grab" }}
+          style={{ width: "100%", height: "100%" }}
         >
-          <ZoomableGroup center={[0, 0]} zoom={1} minZoom={1} maxZoom={4}>
-            <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="#0ea5e9" fillOpacity={0.05} />
-            <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.3} />
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill={getColor(geo.id)}
-                    stroke="var(--surface)"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: "none", transition: "all 250ms" },
-                      hover: {
-                        fill: regionStatusMap.has(numericToAlpha2[geo.id]!) ? getColor(geo.id) : "var(--border)",
-                        outline: "none",
-                        cursor: "pointer",
-                      },
-                      pressed: { outline: "none" },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
-            {/* Render flag markers for all active regions */}
-            {Array.from(regionStatusMap.entries()).map(([code, data]) => {
-              const coords = countryCentroids[code];
-              if (coords && isVisible(coords, rotation)) {
-                return (
-                  <Marker key={`marker-${code}`} coordinates={coords}>
-                    <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>
-                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                        <div style={{ position: 'absolute', width: '20px', height: '14px', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                          <Flag region={code} size={14} />
-                        </div>
-                        <div style={{ position: 'absolute', top: '-6px', left: '12px', background: 'var(--surface)', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '9px', padding: '0 4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                          {data.count}
-                        </div>
+          <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="#0ea5e9" fillOpacity={0.05} />
+          <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.3} />
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill={getColor(geo.id)}
+                  stroke="var(--surface)"
+                  strokeWidth={0.5}
+                  style={{
+                    default: { outline: "none", transition: "fill 250ms" },
+                    hover: {
+                      fill: regionStatusMap.has(numericToAlpha2[geo.id]!) ? getColor(geo.id) : "var(--border)",
+                      outline: "none",
+                      cursor: "pointer",
+                    },
+                    pressed: { outline: "none" },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
+          {/* Render flag markers for all active regions */}
+          {Array.from(regionStatusMap.entries()).map(([code, data]) => {
+            const coords = countryCentroids[code];
+            if (coords && isVisible(coords, rotation)) {
+              return (
+                <Marker key={`marker-${code}`} coordinates={coords}>
+                  <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <div style={{ position: 'absolute', width: '20px', height: '14px', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                        <Flag region={code} size={14} />
                       </div>
-                    </foreignObject>
-                  </Marker>
-                );
-              }
-              return null;
-            })}
-          </ZoomableGroup>
+                      <div style={{ position: 'absolute', top: '-6px', left: '12px', background: 'var(--surface)', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '9px', padding: '0 4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                        {data.count}
+                      </div>
+                    </div>
+                  </foreignObject>
+                </Marker>
+              );
+            }
+            return null;
+          })}
         </ComposableMap>
 
         {/* Legend */}
