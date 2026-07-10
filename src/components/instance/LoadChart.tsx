@@ -420,7 +420,8 @@ export function LoadChart({
   const isRealtime = hours === 0;
   const node = useNode(uuid, isRealtime && active);
   const { resolvedAppearance } = usePreferences();
-  const { w, h } = useResponsiveChartSize("grid");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { w, h } = useResponsiveChartSize("grid", containerRef);
   const [realtimePoints, setRealtimePoints] = useState<ChartPoint[]>([]);
   const [connectNulls, setConnectNulls] = useState(false);
 
@@ -531,7 +532,7 @@ export function LoadChart({
           </span>
         </button>
       </div>
-      <div className="instance-chart-grid">
+      <div className="instance-chart-grid" ref={containerRef}>
         <ChartCard
           icon={<Cpu size={13} />}
           title="CPU"

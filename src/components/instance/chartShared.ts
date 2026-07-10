@@ -162,7 +162,7 @@ export function getChartTooltipPosition({
   return { left, top };
 }
 
-export function useResponsiveChartSize(mode: "grid" | "wide") {
+export function useResponsiveChartSize(mode: "grid" | "wide", containerRef?: React.RefObject<HTMLElement>) {
   const [size, setSize] = useState(
     mode === "grid"
       ? GRID_CHART_DEFAULT
@@ -171,47 +171,72 @@ export function useResponsiveChartSize(mode: "grid" | "wide") {
 
   useEffect(() => {
     function update() {
-      const width = window.innerWidth;
+      const screenWidth = window.innerWidth;
+      const containerWidth = containerRef?.current?.clientWidth || 0;
+
       if (mode === "wide") {
         const height =
-          width < 720
+          screenWidth < 720
             ? WIDE_CHART_MOBILE_HEIGHT
-            : width < 1024
+            : screenWidth < 1024
               ? WIDE_CHART_TABLET_HEIGHT
               : WIDE_CHART_HEIGHT;
+              
+        if (containerWidth > 0) {
+          setSize({ w: containerWidth - 32, h: height });
+          return;
+        }
+        
         setSize({
-          w: Math.min(WIDE_CHART_MAX_WIDTH, Math.max(WIDE_CHART_MIN_WIDTH, width - WIDE_CHART_GUTTER)),
+          w: Math.min(WIDE_CHART_MAX_WIDTH, Math.max(WIDE_CHART_MIN_WIDTH, screenWidth - WIDE_CHART_GUTTER)),
           h: height,
         });
         return;
       }
 
-      if (width >= 1280) {
+      // "grid" mode
+      if (containerWidth > 0) {
+        const columns = screenWidth <= 720 ? 1 : 3;
+        const gap = 16;
+        const columnWidth = (containerWidth - gap * (columns - 1)) / columns;
+        setSize({ w: Math.max(10, columnWidth - 28), h: GRID_CHART_HEIGHT });
+        return;
+      }
+
+      // Fallback
+      if (screenWidth >= 1280) {
         setSize({
-          w: Math.min(GRID_CHART_DESKTOP_MAX_WIDTH, (width - GRID_CHART_DESKTOP_GUTTER) / 3),
+          w: Math.min(GRID_CHART_DESKTOP_MAX_WIDTH, (screenWidth - GRID_CHART_DESKTOP_GUTTER) / 3),
           h: GRID_CHART_HEIGHT,
         });
         return;
       }
 
-      if (width >= 768) {
+      if (screenWidth >= 768) {
         setSize({
-          w: Math.min(GRID_CHART_TABLET_MAX_WIDTH, (width - GRID_CHART_TABLET_GUTTER) / 2),
+          w: Math.min(GRID_CHART_TABLET_MAX_WIDTH, (screenWidth - GRID_CHART_TABLET_GUTTER) / 2),
           h: GRID_CHART_HEIGHT,
         });
         return;
       }
 
       setSize({
-        w: Math.max(WIDE_CHART_MIN_WIDTH - 20, width - GRID_CHART_MOBILE_GUTTER),
+        w: Math.max(WIDE_CHART_MIN_WIDTH - 20, screenWidth - GRID_CHART_MOBILE_GUTTER),
         h: 136,
       });
     }
 
     update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [mode]);
+    
+    if (containerRef?.current) {
+      const observer = new ResizeObserver(update);
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    } else {
+      window.addEventListener("resize", update);
+      return () => window.removeEventListener("resize", update);
+    }
+  }, [mode, containerRef]);
 
   return size;
 }
