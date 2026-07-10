@@ -68,7 +68,7 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
       if (Array.isArray(data)) {
         const rates = {
           base: "USD",
-          date: data[0]?.date || new Date().toLocaleString(),
+          date: new Date().toLocaleString(),
           rates: Object.fromEntries(data.map((item: any) => [item.quote, item.rate]))
         };
         globalRatesCache = rates;
@@ -77,7 +77,7 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
 
       const rates = {
         base: "USD",
-        date: data.date || data.time_last_update_utc || new Date().toLocaleString(),
+        date: new Date().toLocaleString(),
         rates: {
           USD: 1,
           ...Object.fromEntries(Object.entries(data.rates || data.usd || {}).map(([k, v]) => [k.toUpperCase(), v as number]))
@@ -128,7 +128,11 @@ export function useValueStats(targetCurrency: TargetCurrency) {
   const fixedRate = themeSettings?.fixedExchangeRate;
   const customApi = themeSettings?.customExchangeApi;
 
-  const triggerFetchRates = async () => {
+  const triggerFetchRates = async (force?: any) => {
+    if (force) {
+      globalRatesCache = null;
+      globalRatesPromise = null;
+    }
     if (fixedRate && !isNaN(parseFloat(fixedRate))) {
       const fixedRatesData = {
         base: "USD",
