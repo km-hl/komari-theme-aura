@@ -52,6 +52,7 @@ export default function WorldMap() {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const [rotation, setRotation] = useState({ x: 0, y: -10 });
+  const [scale, setScale] = useState(190);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -78,6 +79,10 @@ export default function WorldMap() {
       y: Math.max(-80, Math.min(80, r.y + deltaY * 0.4))
     }));
     setDragStart({ x: clientX, y: clientY });
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    setScale(s => Math.min(Math.max(100, s - e.deltaY * 0.5), 600));
   };
 
   useEffect(() => {
@@ -171,10 +176,11 @@ export default function WorldMap() {
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
         onTouchMove={handleMouseMove}
+        onWheel={handleWheel}
       >
         <ComposableMap
           projection="geoOrthographic"
-          projectionConfig={{ scale: 190, rotate: [-rotation.x, -rotation.y, 0] }}
+          projectionConfig={{ scale, rotate: [-rotation.x, -rotation.y, 0] }}
           width={800}
           height={400}
           style={{ width: "100%", height: "100%", pointerEvents: "none" }}
@@ -210,7 +216,7 @@ export default function WorldMap() {
               return (
                 <Marker key={`marker-${code}`} coordinates={coords}>
                   <foreignObject x="-25" y="-14" width="50" height="28" style={{ overflow: 'visible' }}>
-                    <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full px-1.5 py-0.5 shadow-md w-max gap-1.5 absolute left-1/2 -translate-x-1/2">
+                    <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full px-1.5 py-0.5 shadow-md w-max gap-1.5 absolute left-1/2 -translate-x-1/2 select-none pointer-events-none">
                       <div className="w-3.5 h-3.5 flex items-center justify-center overflow-hidden rounded-sm">
                         <Flag region={code} size={14} />
                       </div>
