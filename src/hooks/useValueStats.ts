@@ -52,7 +52,7 @@ export function normalizeCurrency(c: string | null | undefined): string {
 let globalRatesCache: ExchangeRates | null = null;
 let globalRatesPromise: Promise<ExchangeRates | null> | null = null;
 
-export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
+export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRates | null> => {
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
@@ -63,6 +63,7 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
       "https://api.frankfurter.app/latest?from=USD",
       "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
     ];
+    if (customApi) apis.unshift(customApi);
     
     for (const url of apis) {
       try {
@@ -126,16 +127,33 @@ export function convertCurrency(amount: number, from: string, to: string, ratesD
 export function useValueStats(targetCurrency: TargetCurrency) {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { data: config } = usePublicConfig();
   
   const [ratesData, setRatesData] = useState<ExchangeRates | null>(globalRatesCache);
   const [loadingRates, setLoadingRates] = useState(!globalRatesCache);
   const [errorRates, setErrorRates] = useState<string | null>(null);
 
+  const themeSettings = config?.theme_settings as any;
+  const fixedRate = themeSettings?.fixedExchangeRate;
+  const customApi = themeSettings?.customExchangeApi;
+
   const triggerFetchRates = async () => {
+    if (fixedRate && !isNaN(parseFloat(fixedRate))) {
+      const fixedRatesData = {
+        base: "USD",
+        date: new Date().toLocaleString(),
+        rates: { USD: 1, CNY: parseFloat(fixedRate) }
+      };
+      setRatesData(fixedRatesData);
+      setLoadingRates(false);
+      globalRatesCache = fixedRatesData;
+      return;
+    }
+
     setLoadingRates(true);
     setErrorRates(null);
     try {
-      const rates = await fetchGlobalRates();
+      const rates = await fetchGlobalRates(customApi);
       setRatesData(rates);
     } catch (e) {
       setErrorRates("获取汇率失败");
@@ -148,7 +166,7 @@ export function useValueStats(targetCurrency: TargetCurrency) {
     if (!ratesData && !loadingRates) {
       triggerFetchRates();
     }
-  }, []);
+  }, [config]);
 
   const stats = useMemo(() => {
     const validNodes: any[] = [];
