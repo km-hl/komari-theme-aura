@@ -216,7 +216,6 @@ export function useValueStats(targetCurrency: TargetCurrency) {
           currency,
           price
         });
-      }
     }
     
     validNodes.sort((a, b) => b.residualValue - a.residualValue);
