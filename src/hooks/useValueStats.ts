@@ -54,10 +54,11 @@ let globalRatesCache: ExchangeRates | null = null;
 let globalRatesPromise: Promise<ExchangeRates | null> | null = null;
 
 export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRates | null> => {
+  console.log("[fetchGlobalRates] called, cache=", globalRatesCache);
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  const url = customApi || "https://api.frankfurter.app/latest?from=USD";
+  const url = customApi || "https://api.frankfurter.dev/v1/latest?from=USD";
 
   globalRatesPromise = fetch(url)
     .then(async (res) => {
