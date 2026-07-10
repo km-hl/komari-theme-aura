@@ -11,6 +11,7 @@ interface ValueCalculatorProps {
 export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
   const [targetCurrency, setTargetCurrency] = useState<TargetCurrency>("CNY");
   const [filterType, setFilterType] = useState<"all" | "valid" | "invalid" | "expired">("all");
+  const [view, setView] = useState<"residual" | "cost">("residual");
 
   const {
     ratesData,
@@ -44,9 +45,22 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-card)]">
-          <div className="flex items-center gap-2 text-[var(--text-primary)] font-bold text-lg">
-            <Calculator size={20} />
-            <h2>剩余价值计算器</h2>
+          <div className="flex items-center gap-6 text-[var(--text-primary)] font-bold text-lg">
+            <div className="flex items-center gap-2 pr-2 border-r border-[var(--border-subtle)]">
+              <Calculator size={20} />
+            </div>
+            <button 
+              onClick={() => setView("residual")} 
+              className={clsx("transition-colors", view === "residual" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
+            >
+              剩余价值
+            </button>
+            <button 
+              onClick={() => setView("cost")} 
+              className={clsx("transition-colors", view === "cost" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
+            >
+              成本统计
+            </button>
           </div>
           <button onClick={onClose} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-lg hover:bg-[var(--bg-card-hover)]">
             <X size={20} />
@@ -96,32 +110,37 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-              <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">全部剩余价值</div>
-              <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                {targetCurrency} {loadingRates ? "-" : totalResidual.toFixed(2)}
+          {view === "residual" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
+                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">全部剩余价值</div>
+                <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                  {targetCurrency} {loadingRates ? "-" : totalResidual.toFixed(2)}
+                </div>
+              </div>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
+                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总价值</div>
+                <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                  {targetCurrency} {loadingRates ? "-" : totalValue.toFixed(2)}
+                </div>
               </div>
             </div>
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-              <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总价值</div>
-              <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                {targetCurrency} {loadingRates ? "-" : totalValue.toFixed(2)}
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
+                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总月成本</div>
+                <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                  {targetCurrency} {loadingRates ? "-" : totalMonthlyCost.toFixed(2)}
+                </div>
+              </div>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
+                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总年成本</div>
+                <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                  {targetCurrency} {loadingRates ? "-" : (totalMonthlyCost * 12).toFixed(2)}
+                </div>
               </div>
             </div>
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-              <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">月成本</div>
-              <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                {targetCurrency} {loadingRates ? "-" : totalMonthlyCost.toFixed(2)}
-              </div>
-            </div>
-            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-              <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">年成本</div>
-              <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                {targetCurrency} {loadingRates ? "-" : (totalMonthlyCost * 12).toFixed(2)}
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Filter Tabs */}
           <div className="flex flex-wrap gap-2">
@@ -161,40 +180,76 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 没有符合条件的节点
               </div>
             )}
-            {currentList.map((item: any, i) => (
-              <div key={i} className="flex flex-col p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="font-medium text-[15px] text-[var(--text-primary)]">{item.node.name}</div>
-                  <div className="font-bold text-[15px] text-[var(--text-primary)]">
-                    {targetCurrency} {loadingRates ? "-" : item.convertedPrice?.toFixed(2) || (item.convertedPrice === 0 ? "0.00" : "-")}
+            {currentList.map((item: any, i) => {
+              const dailyCost = item.price / item.cycleDays;
+              const originalMonthly = dailyCost * 30;
+              const originalYearly = dailyCost * 365;
+              let targetMonthly = 0;
+              let targetYearly = 0;
+              
+              if (item.convertedPrice != null && ratesData) {
+                 const rate = (item.currency === targetCurrency) ? 1 : (ratesData.rates[targetCurrency] / ratesData.rates[item.currency]);
+                 targetMonthly = originalMonthly * rate;
+                 targetYearly = originalYearly * rate;
+              }
+
+              return (
+                <div key={i} className="flex flex-col p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="font-medium text-[15px] text-[var(--text-primary)]">{item.node.name}</div>
+                    
+                    {view === "residual" ? (
+                      <div className="font-bold text-[15px] text-[var(--text-primary)]">
+                        {targetCurrency} {loadingRates ? "-" : item.convertedPrice?.toFixed(2) || (item.convertedPrice === 0 ? "0.00" : "-")}
+                      </div>
+                    ) : (
+                      <div className="text-right">
+                        <div className="font-bold text-[15px] text-[var(--text-primary)]">
+                          {targetCurrency} {loadingRates ? "-" : targetMonthly ? targetMonthly.toFixed(2) : "-"} / 月
+                        </div>
+                        <div className="text-[13px] text-[var(--text-secondary)] mt-0.5">
+                          {targetCurrency} {loadingRates ? "-" : targetYearly ? targetYearly.toFixed(2) : "-"} / 年
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1.5 text-[13px] text-[var(--text-tertiary)]">
+                    {item.reason ? (
+                       <div className="text-red-400">无法计算: {item.reason}</div>
+                    ) : (
+                      <>
+                        <div>
+                          原价 {item.currency === "USD" ? "$" : item.currency === "CNY" ? "¥" : `${item.currency} `}{item.price} / {item.cycleDays} 天
+                        </div>
+                        {view === "residual" && (
+                          <>
+                            <div>
+                              剩余时间 {
+                                Math.floor(getRemainingDays(item.node.expired_at))
+                              } 天
+                            </div>
+                            <div>
+                              原币种价值 {item.currency} {(() => {
+                                const remainDays = getRemainingDays(item.node.expired_at);
+                                return (dailyCost * remainDays).toFixed(2);
+                              })()}
+                            </div>
+                          </>
+                        )}
+                        {view === "cost" && (
+                          <>
+                            <div>
+                              原币种成本 {item.currency} {originalMonthly.toFixed(2)} / 月，{item.currency} {originalYearly.toFixed(2)} / 年
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-                
-                <div className="space-y-1.5 text-[13px] text-[var(--text-tertiary)]">
-                  {item.reason ? (
-                     <div className="text-red-400">无法计算: {item.reason}</div>
-                  ) : (
-                    <>
-                      <div>
-                        原价 {item.currency === "USD" ? "$" : item.currency === "CNY" ? "¥" : `${item.currency} `}{item.price} / {item.cycleDays} 天
-                      </div>
-                      <div>
-                        剩余时间 {
-                          Math.floor(getRemainingDays(item.node.expired_at))
-                        } 天
-                      </div>
-                      <div>
-                        原币种价值 {item.currency} {(() => {
-                          const remainDays = getRemainingDays(item.node.expired_at);
-                          const dailyCost = item.price / item.cycleDays;
-                          return (dailyCost * remainDays).toFixed(2);
-                        })()}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
         </div>
