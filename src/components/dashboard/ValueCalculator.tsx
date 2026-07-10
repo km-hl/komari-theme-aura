@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, RefreshCw, Calculator } from "lucide-react";
 import { clsx } from "clsx";
-import { useValueStats, TARGET_CURRENCIES, type TargetCurrency } from "@/hooks/useValueStats";
+import { useValueStats, TARGET_CURRENCIES, type TargetCurrency, getRemainingDays } from "@/hooks/useValueStats";
 
 interface ValueCalculatorProps {
   isOpen: boolean;
