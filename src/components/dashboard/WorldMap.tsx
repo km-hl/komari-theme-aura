@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "@/services/wsStore";
 import { useVisibleNodeUuids } from "@/hooks/useNode";
@@ -51,8 +51,9 @@ const countryCentroids: Record<string, [number, number]> = {
 export default function WorldMap() {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: -10 });
-  const [scale, setScale] = useState(190);
+  const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -75,15 +76,22 @@ export default function WorldMap() {
     const deltaY = clientY - dragStart.y;
     
     setRotation(r => ({
-      x: (r.x - deltaX * 0.4) % 360,
-      y: Math.max(-80, Math.min(80, r.y + deltaY * 0.4))
+      x: (r.x - (deltaX * 0.4) / zoom) % 360,
+      y: Math.max(-80, Math.min(80, r.y + (deltaY * 0.4) / zoom))
     }));
     setDragStart({ x: clientX, y: clientY });
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    setScale(s => Math.min(Math.max(100, s - e.deltaY * 0.5), 600));
-  };
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom(z => Math.min(Math.max(1, z - e.deltaY * 0.002), 5));
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
 
   useEffect(() => {
     let frameId: number;
@@ -168,7 +176,9 @@ export default function WorldMap() {
   return (
     <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center">
       <div 
-        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing"
+        ref={containerRef}
+        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing transition-transform duration-75"
+        style={{ transform: `scale(${zoom})`, transformOrigin: "center center", touchAction: "none" }}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -176,11 +186,10 @@ export default function WorldMap() {
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
         onTouchMove={handleMouseMove}
-        onWheel={handleWheel}
       >
         <ComposableMap
           projection="geoOrthographic"
-          projectionConfig={{ scale, rotate: [-rotation.x, -rotation.y, 0] }}
+          projectionConfig={{ scale: 190, rotate: [-rotation.x, -rotation.y, 0] }}
           width={800}
           height={400}
           style={{ width: "100%", height: "100%", pointerEvents: "none" }}

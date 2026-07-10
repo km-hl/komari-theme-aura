@@ -56,7 +56,9 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  globalRatesPromise = fetch("https://api.frankfurter.app/latest?from=USD")
+  globalRatesPromise = fetch("https://api.exchangerate-api.com/v4/latest/USD")
+    .catch(() => fetch("https://open.er-api.com/v6/latest/USD"))
+    .catch(() => fetch("https://api.frankfurter.app/latest?from=USD"))
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch rates");
       return res.json();
@@ -64,9 +66,9 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
     .then(data => {
       const rates = {
         base: "USD",
-        date: data.date || new Date().toLocaleString(),
+        date: data.date || data.time_last_update_utc || new Date().toLocaleString(),
         rates: {
-          USD: 1, // Frankfurter omitting base currency
+          USD: 1, // In case omitting base currency
           ...Object.fromEntries(Object.entries(data.rates).map(([k, v]) => [k.toUpperCase(), v as number]))
         }
       };

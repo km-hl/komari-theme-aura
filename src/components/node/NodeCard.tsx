@@ -33,6 +33,7 @@ import {
   lossHeatColor,
 } from "@/utils/metricTone";
 import { Flag } from "@/components/ui/Flag";
+import { OsIcon } from "@/components/ui/OsIcon";
 import { MetricBar } from "./MetricBar";
 import { MiniBars } from "./MiniBars";
 import { QualityBars } from "./QualityBars";
@@ -176,11 +177,12 @@ export const NodeCard = memo(function NodeCard({
         </div>
       )}
 
-      <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-card-hover)] px-5 py-3 lg:px-6">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col flex-1 p-5 lg:p-6">
+        <header className="flex items-center justify-between mb-5 lg:mb-6">
           <div className="server-card-title-block">
             <div className="server-card-title-row">
               <Flag region={node.region} size={15} />
+              <OsIcon os={node.os} className="w-[15px] h-[15px] text-[var(--text-tertiary)]" />
               <Link
                 to={`/instance/${node.uuid}`}
                 className="server-card-title-link"
@@ -221,10 +223,8 @@ export const NodeCard = memo(function NodeCard({
           >
             <ExternalLink size={15} strokeWidth={2} />
           </Link>
-        </div>
-      </div>
+        </header>
 
-      <div className="flex flex-col flex-1 p-5 lg:p-6">
         <div className="flex flex-col flex-1 gap-5 lg:gap-6">
           <div className="card-metric-section server-metric-grid">
             <MetricBar
@@ -390,10 +390,8 @@ export const NodeCard = memo(function NodeCard({
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-auto pt-6">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
             <FooterStat
               icon={<Calendar size={13} strokeWidth={2} />}
               label="到期"
@@ -410,8 +408,8 @@ export const NodeCard = memo(function NodeCard({
             />
           </div>
           
-          <div className="mt-auto pt-2">
-            {footerTags.length > 0 && (
+          {footerTags.length > 0 && (
+            <div className="mt-auto">
               <div className="dstatus-tags-row">
                 {footerTags.slice(0, 6).map((tag, i) => {
                   const isHex = tag.color.startsWith("#");
@@ -438,8 +436,8 @@ export const NodeCard = memo(function NodeCard({
                   <span className="dstatus-tag-more">+{footerTags.length - 6}</span>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
         </div>
       </div>
