@@ -96,7 +96,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
               <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">全部剩余价值</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
@@ -113,6 +113,12 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
               <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">月成本</div>
               <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {targetCurrency} {loadingRates ? "-" : totalMonthlyCost.toFixed(2)}
+              </div>
+            </div>
+            <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
+              <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">年成本</div>
+              <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                {targetCurrency} {loadingRates ? "-" : (totalMonthlyCost * 12).toFixed(2)}
               </div>
             </div>
           </div>
