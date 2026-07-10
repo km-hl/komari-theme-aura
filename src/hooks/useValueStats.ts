@@ -56,13 +56,33 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  globalRatesPromise = fetch("https://api.exchangerate-api.com/v4/latest/USD")
-    .catch(() => fetch("https://open.er-api.com/v6/latest/USD"))
-    .catch(() => fetch("https://api.frankfurter.app/latest?from=USD"))
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to fetch rates");
-      return res.json();
-    })
+  const fetchWithFallback = async () => {
+    const apis = [
+      "https://api.exchangerate-api.com/v4/latest/USD",
+      "https://open.er-api.com/v6/latest/USD",
+      "https://api.frankfurter.app/latest?from=USD",
+      "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
+    ];
+    
+    for (const url of apis) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          // Normalize fawazahmed0 API structure
+          if (data.usd && !data.rates) {
+            data.rates = data.usd;
+          }
+          return data;
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch from ${url}`, e);
+      }
+    }
+    throw new Error("All exchange rate APIs failed");
+  };
+
+  globalRatesPromise = fetchWithFallback()
     .then(data => {
       const rates = {
         base: "USD",
@@ -76,7 +96,7 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
       return rates;
     })
     .catch(err => {
-      console.warn("Failed to load Frankfurter rates", err);
+      console.warn("Failed to load exchange rates", err);
       return null;
     })
     .finally(() => {
