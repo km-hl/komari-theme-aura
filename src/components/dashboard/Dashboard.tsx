@@ -4,7 +4,6 @@ import { useGlobalStats } from "@/hooks/useNode";
 import { formatBytes } from "@/utils/format";
 import WorldMap from "./WorldMap";
 import { useValueStats } from "@/hooks/useValueStats";
-import { clsx } from "clsx";
 
 export function Dashboard() {
   const stats = useGlobalStats();
