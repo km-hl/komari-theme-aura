@@ -101,15 +101,29 @@ export default function WorldMap() {
     return statusMap;
   }, [visibleUuids, snap.byUuid]);
 
+  const isVisible = (coords: [number, number], currentRotation: number) => {
+    const [lon, lat] = coords;
+    const centerLon = currentRotation;
+    const centerLat = 10;
+    
+    const rad = Math.PI / 180;
+    const lat1 = lat * rad;
+    const lat2 = centerLat * rad;
+    const dLon = (lon - centerLon) * rad;
+    
+    const cosC = Math.sin(lat1) * Math.sin(lat2) + Math.cos(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    return cosC > 0;
+  };
+
   const getColor = (geoId: string) => {
     const code = numericToAlpha2[geoId];
-    if (!code) return "var(--fill-tertiary)";
+    if (!code) return "var(--fill-quaternary, #334155)";
     const data = regionStatusMap.get(code);
-    if (!data) return "var(--fill-tertiary)";
+    if (!data) return "var(--fill-quaternary, #334155)";
     if (data.status === "online") return "var(--status-success)";
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
-    return "var(--fill-tertiary)";
+    return "var(--fill-quaternary, #334155)";
   };
 
   return (
@@ -123,7 +137,7 @@ export default function WorldMap() {
           style={{ width: "100%", height: "100%", cursor: "grab" }}
         >
           <ZoomableGroup center={[0, 0]} zoom={1} minZoom={1} maxZoom={4}>
-            <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="var(--bg-card-hover)" />
+            <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="#0ea5e9" fillOpacity={0.05} />
             <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.3} />
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
@@ -150,7 +164,7 @@ export default function WorldMap() {
             {/* Render flag markers for all active regions */}
             {Array.from(regionStatusMap.entries()).map(([code, data]) => {
               const coords = countryCentroids[code];
-              if (coords) {
+              if (coords && isVisible(coords, rotation)) {
                 return (
                   <Marker key={`marker-${code}`} coordinates={coords}>
                     <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>

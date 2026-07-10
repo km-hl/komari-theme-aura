@@ -121,7 +121,15 @@ export const NodeCard = memo(function NodeCard({
       priceStr = node.currency === "USD" ? `$${priceStr}` : node.currency === "CNY" ? `¥${priceStr}` : `${node.currency} ${priceStr}`;
     }
     if (node.billing_cycle) {
-      priceStr += ` / ${node.billing_cycle}`;
+      const cycle = String(node.billing_cycle);
+      const cycleMap: Record<string, string> = {
+        "365": "年",
+        "30": "月",
+        "90": "季",
+        "180": "半年",
+        "1": "天"
+      };
+      priceStr += ` / ${cycleMap[cycle] || cycle}`;
     }
     footerTags.push({ label: priceStr, color: "purple" });
   }
