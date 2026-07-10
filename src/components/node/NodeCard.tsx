@@ -103,7 +103,7 @@ export const NodeCard = memo(function NodeCard({
   if (!node) {
     return (
       <div
-        className="server-card animate-pulse"
+        className="server-card h-full animate-pulse"
         style={{ minHeight: 438 }}
         aria-busy
       />
@@ -159,7 +159,7 @@ export const NodeCard = memo(function NodeCard({
 
   return (
     <article
-      className={clsx("server-card", isOffline && "is-offline")}
+      className={clsx("server-card h-full flex flex-col", isOffline && "is-offline")}
       data-appearance={resolvedAppearance}
     >
       {isOffline && (
@@ -178,7 +178,7 @@ export const NodeCard = memo(function NodeCard({
       )}
 
       <div className="flex flex-col flex-1 p-5 lg:p-6">
-        <header className="flex items-center justify-between mb-5 lg:mb-6">
+        <header className="flex items-center justify-between gap-4 mb-5 lg:mb-6">
           <div className="server-card-title-block">
             <div className="server-card-title-row">
               <Flag region={node.region} size={15} />
