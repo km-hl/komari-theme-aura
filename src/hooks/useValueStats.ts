@@ -61,7 +61,8 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
     const apis = [
       "https://api.exchangerate-api.com/v4/latest/USD",
       "https://open.er-api.com/v6/latest/USD",
-      "https://api.frankfurter.dev/v1/rates?base=USD",
+      "https://api.frankfurter.dev/v1/latest?base=USD",
+      "https://api.frankfurter.dev/v2/rates?base=USD",
       "https://api.frankfurter.app/latest?from=USD",
       "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
     ];
@@ -190,7 +191,8 @@ export function useValueStats(targetCurrency: TargetCurrency) {
       const node = snap.byUuid[uuid];
       if (!node) continue;
       
-      const price = node.price || 0;
+      const priceStr = String(node.price || 0).replace(/[^\d.-]/g, '');
+      const price = parseFloat(priceStr) || 0;
       const cycleDays = parseCycleDays(node.billing_cycle);
       const remainingDays = getRemainingDays(node.expired_at);
       const currency = normalizeCurrency(node.currency);
