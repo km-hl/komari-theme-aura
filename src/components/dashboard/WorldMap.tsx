@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "@/services/wsStore";
 import { useVisibleNodeUuids } from "@/hooks/useNode";
@@ -9,9 +9,10 @@ import {
   Graticule,
   ZoomableGroup,
   Marker,
+  Sphere,
 } from "react-simple-maps";
 
-import { resolveFlagCode } from "@/components/ui/Flag";
+import { resolveFlagCode, Flag } from "@/components/ui/Flag";
 
 const geoUrl = "/world.json";
 
@@ -26,26 +27,46 @@ const alpha2ToNumeric: Record<string, string> = {
   NO: "578", DK: "208", PL: "616", CZ: "203", RO: "642",
   TR: "792", IL: "376", MX: "484", AR: "032", CL: "152",
   CO: "170", NZ: "554", IE: "372", PT: "620", GR: "300",
-  BE: "056", LU: "442", MO: "446", UA: "804", EG: "818"
+  BE: "056", LU: "442", MO: "446", UA: "804", EG: "818", MT: "470", MC: "492", BH: "048"
 };
 
-// Coordinates [longitude, latitude] for small regions often missing from 110m map
-const microstateCoords: Record<string, [number, number]> = {
-  "344": [114.1694, 22.3193], // Hong Kong
-  "702": [103.8198, 1.3521],  // Singapore
-  "446": [113.5439, 22.1987], // Macau
-  "048": [50.5577, 26.0667],  // Bahrain
-  "470": [14.3754, 35.9375],  // Malta
-  "492": [7.4246, 43.7384],   // Monaco
+const numericToAlpha2: Record<string, string> = Object.fromEntries(
+  Object.entries(alpha2ToNumeric).map(([k, v]) => [v, k])
+);
+
+// Coordinates [longitude, latitude] for region centroids
+const countryCentroids: Record<string, [number, number]> = {
+  US: [-95.7129, 37.0902], CN: [104.1954, 35.8617], HK: [114.1694, 22.3193], TW: [120.9605, 23.6978], JP: [138.2529, 36.2048],
+  SG: [103.8198, 1.3521], KR: [127.7669, 35.9078], DE: [10.4515, 51.1657], FR: [2.2137, 46.2276], GB: [-3.4360, 55.3781], UK: [-3.4360, 55.3781],
+  NL: [5.2913, 52.1326], CA: [-106.3468, 56.1304], AU: [133.7751, -25.2744], RU: [105.3188, 61.5240], IN: [78.9629, 20.5937],
+  MY: [101.9758, 4.2105], ID: [113.9213, -0.7893], VN: [108.2772, 14.0583], TH: [100.9925, 15.8700], PH: [121.7740, 12.8797],
+  BR: [-51.9253, -14.2350], ZA: [22.9375, -30.5595], AE: [53.8478, 23.4241], SA: [45.0792, 23.8859], IT: [12.5674, 41.8719],
+  ES: [-3.7492, 40.4637], SE: [18.6435, 60.1282], CH: [8.2275, 46.8182], AT: [14.5501, 47.5162], FI: [25.7482, 61.9241],
+  NO: [8.4689, 60.4720], DK: [9.5018, 56.2639], PL: [19.1451, 51.9194], CZ: [15.4730, 49.8175], RO: [24.9668, 45.9432],
+  TR: [35.2433, 38.9637], IL: [34.8516, 31.0461], MX: [-102.5528, 23.6345], AR: [-63.6167, -38.4161], CL: [-71.5430, -35.6751],
+  CO: [-74.2973, 4.5709], NZ: [174.8860, -40.9006], IE: [-8.2439, 53.4129], PT: [-8.2245, 39.3999], GR: [21.8243, 39.0742],
+  BE: [4.4699, 50.5039], LU: [6.1296, 49.8153], MO: [113.5439, 22.1987], UA: [31.1656, 48.3794], EG: [30.8025, 26.8206],
+  MT: [14.3754, 35.9375], MC: [7.4246, 43.7384], BH: [50.5577, 26.0667],
 };
 
 export default function WorldMap() {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const [rotation, setRotation] = useState(0);
 
-  // Determine status per country ID
+  useEffect(() => {
+    let frameId: number;
+    const updateRotation = () => {
+      setRotation((r) => (r + 0.3) % 360);
+      frameId = requestAnimationFrame(updateRotation);
+    };
+    frameId = requestAnimationFrame(updateRotation);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // Determine status per country code
   const regionStatusMap = useMemo(() => {
-    // region mapping: { numericId: { total: number, online: number } }
+    // region mapping: { code: { total: number, online: number } }
     const map = new Map<string, { total: number; online: number }>();
 
     for (const uuid of visibleUuids) {
@@ -54,40 +75,40 @@ export default function WorldMap() {
 
       const code = resolveFlagCode(node.region);
       if (!code) continue;
-      
-      const numericId = alpha2ToNumeric[code];
-      if (!numericId) continue;
 
-      if (!map.has(numericId)) {
-        map.set(numericId, { total: 0, online: 0 });
+      if (!map.has(code)) {
+        map.set(code, { total: 0, online: 0 });
       }
-      const data = map.get(numericId)!;
+      const data = map.get(code)!;
       data.total += 1;
       if (node.online) {
         data.online += 1;
       }
     }
 
-    // Convert to status map: { numericId: "online" | "partial" | "offline" }
-    const statusMap = new Map<string, "online" | "partial" | "offline">();
-    map.forEach((data, id) => {
+    // Convert to status map: { code: "online" | "partial" | "offline" | {count} }
+    const statusMap = new Map<string, { status: "online" | "partial" | "offline", count: number }>();
+    map.forEach((data, code) => {
+      let status: "online" | "partial" | "offline" = "partial";
       if (data.online === data.total) {
-        statusMap.set(id, "online");
+        status = "online";
       } else if (data.online === 0) {
-        statusMap.set(id, "offline");
-      } else {
-        statusMap.set(id, "partial");
+        status = "offline";
       }
+      statusMap.set(code, { status, count: data.total });
     });
 
     return statusMap;
   }, [visibleUuids, snap.byUuid]);
 
-  const getColor = (id: string) => {
-    const status = regionStatusMap.get(id);
-    if (status === "online") return "var(--status-success)";
-    if (status === "partial") return "var(--status-warning)";
-    if (status === "offline") return "var(--status-error)";
+  const getColor = (geoId: string) => {
+    const code = numericToAlpha2[geoId];
+    if (!code) return "var(--fill-tertiary)";
+    const data = regionStatusMap.get(code);
+    if (!data) return "var(--fill-tertiary)";
+    if (data.status === "online") return "var(--status-success)";
+    if (data.status === "partial") return "var(--status-warning)";
+    if (data.status === "offline") return "var(--status-error)";
     return "var(--fill-tertiary)";
   };
 
@@ -95,13 +116,15 @@ export default function WorldMap() {
     <div className="relative w-full overflow-hidden server-card mt-6 p-4">
       <div className="w-full aspect-[2.2/1] relative">
         <ComposableMap
-          projectionConfig={{ scale: 140 }}
+          projection="geoOrthographic"
+          projectionConfig={{ scale: 190, rotate: [-rotation, -10, 0] }}
           width={800}
           height={400}
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", cursor: "grab" }}
         >
           <ZoomableGroup center={[0, 0]} zoom={1} minZoom={1} maxZoom={4}>
-            <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.5} />
+            <Sphere id="sphere" stroke="var(--border)" strokeWidth={0.5} fill="var(--bg-card-hover)" />
+            <Graticule stroke="var(--border)" strokeWidth={0.5} opacity={0.3} />
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
                 geographies.map((geo) => (
@@ -114,7 +137,7 @@ export default function WorldMap() {
                     style={{
                       default: { outline: "none", transition: "all 250ms" },
                       hover: {
-                        fill: regionStatusMap.has(geo.id) ? getColor(geo.id) : "var(--border)",
+                        fill: regionStatusMap.has(numericToAlpha2[geo.id]!) ? getColor(geo.id) : "var(--border)",
                         outline: "none",
                         cursor: "pointer",
                       },
@@ -124,13 +147,22 @@ export default function WorldMap() {
                 ))
               }
             </Geographies>
-            {/* Render markers for microstates that are active but not on the map */}
-            {Array.from(regionStatusMap.entries()).map(([id]) => {
-              const coords = microstateCoords[id];
+            {/* Render flag markers for all active regions */}
+            {Array.from(regionStatusMap.entries()).map(([code, data]) => {
+              const coords = countryCentroids[code];
               if (coords) {
                 return (
-                  <Marker key={`marker-${id}`} coordinates={coords}>
-                    <circle r={2.5} fill={getColor(id)} stroke="var(--surface)" strokeWidth={0.5} />
+                  <Marker key={`marker-${code}`} coordinates={coords}>
+                    <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>
+                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <div style={{ position: 'absolute', width: '20px', height: '14px', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                          <Flag code={code} size="sm" />
+                        </div>
+                        <div style={{ position: 'absolute', top: '-6px', left: '12px', background: 'var(--surface)', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '9px', padding: '0 4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                          {data.count}
+                        </div>
+                      </div>
+                    </foreignObject>
                   </Marker>
                 );
               }

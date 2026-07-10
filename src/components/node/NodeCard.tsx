@@ -110,10 +110,21 @@ export const NodeCard = memo(function NodeCard({
   const tags = parseTags(node.tags);
   const footerTags =
     tags.length > 0
-      ? tags
+      ? [...tags]
       : node.group
         ? [{ label: node.group, color: "gray" }]
         : [];
+
+  if (node.price != null && node.price > 0) {
+    let priceStr = `${node.price}`;
+    if (node.currency) {
+      priceStr = node.currency === "USD" ? `$${priceStr}` : node.currency === "CNY" ? `¥${priceStr}` : `${node.currency} ${priceStr}`;
+    }
+    if (node.billing_cycle) {
+      priceStr += ` / ${node.billing_cycle}`;
+    }
+    footerTags.push({ label: priceStr, color: "purple" });
+  }
   const expire = formatExpireDays(node.expired_at);
   const uptime = formatUptimeDays(node.uptime);
   const subtitle =
