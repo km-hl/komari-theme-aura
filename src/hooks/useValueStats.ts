@@ -56,19 +56,17 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates> => {
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  globalRatesPromise = fetch("https://open.er-api.com/v6/latest/USD")
+  globalRatesPromise = fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
+    .catch(() => fetch("https://latest.currency-api.pages.dev/v1/currencies/usd.json"))
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch rates");
       return res.json();
     })
     .then(data => {
       const rates = {
-        base: data.base_code,
-        date: new Date().toLocaleString(undefined, {
-          year: "numeric", month: "2-digit", day: "2-digit",
-          hour: "2-digit", minute: "2-digit"
-        }),
-        rates: data.rates
+        base: "USD",
+        date: data.date || new Date().toLocaleString(),
+        rates: Object.fromEntries(Object.entries(data.usd).map(([k, v]) => [k.toUpperCase(), v as number]))
       };
       globalRatesCache = rates;
       return rates;
