@@ -156,7 +156,7 @@ export default function WorldMap() {
                     <foreignObject x="-10" y="-18" width="40" height="30" style={{ overflow: 'visible' }}>
                       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                         <div style={{ position: 'absolute', width: '20px', height: '14px', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                          <Flag code={code} size="sm" />
+                          <Flag region={code} size={14} />
                         </div>
                         <div style={{ position: 'absolute', top: '-6px', left: '12px', background: 'var(--surface)', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '9px', padding: '0 4px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                           {data.count}
