@@ -390,18 +390,30 @@ export function ThemeManage() {
       >
         <div className="surface-inset px-4 py-4 flex items-center justify-between">
           <div className="text-[13px] text-[var(--text-primary)]">计费标签颜色</div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+             {["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"].map(color => (
+               <button
+                 key={color}
+                 type="button"
+                 onClick={() => setDraftPriceTagColor(color)}
+                 className={clsx(
+                   "w-6 h-6 rounded-full border-2 transition-transform",
+                   draftPriceTagColor === color ? "border-[var(--text-primary)] scale-110" : "border-transparent hover:scale-110"
+                 )}
+                 style={{ background: color }}
+               />
+             ))}
              <input 
                type="color" 
                value={draftPriceTagColor || "#a855f7"} 
                onChange={e => setDraftPriceTagColor(e.target.value)} 
-               className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg" 
+               className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full ml-1" 
              />
              {draftPriceTagColor && (
                <button 
                  type="button"
                  onClick={() => setDraftPriceTagColor(undefined)} 
-                 className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                 className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors ml-2"
                >
                  恢复默认
                </button>

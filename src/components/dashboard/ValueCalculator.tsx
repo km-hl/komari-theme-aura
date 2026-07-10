@@ -45,22 +45,9 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-card)]">
-          <div className="flex items-center gap-6 text-[var(--text-primary)] font-bold text-lg">
-            <div className="flex items-center gap-2 pr-2 border-r border-[var(--border-subtle)]">
-              <Calculator size={20} />
-            </div>
-            <button 
-              onClick={() => setView("residual")} 
-              className={clsx("transition-colors", view === "residual" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
-            >
-              剩余价值
-            </button>
-            <button 
-              onClick={() => setView("cost")} 
-              className={clsx("transition-colors", view === "cost" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
-            >
-              成本统计
-            </button>
+          <div className="flex items-center gap-2 text-[var(--text-primary)] font-bold text-lg">
+            <Calculator size={20} />
+            <span>计算器</span>
           </div>
           <button onClick={onClose} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-lg hover:bg-[var(--bg-card-hover)]">
             <X size={20} />
@@ -70,6 +57,32 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
+          {/* Tabs */}
+          <div className="flex gap-2 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl w-max">
+            <button
+              onClick={() => setView("residual")}
+              className={clsx(
+                "px-5 py-2 text-[13px] font-bold rounded-lg transition-all",
+                view === "residual"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              剩余价值
+            </button>
+            <button
+              onClick={() => setView("cost")}
+              className={clsx(
+                "px-5 py-2 text-[13px] font-bold rounded-lg transition-all",
+                view === "cost"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              成本统计
+            </button>
+          </div>
+
           {/* Top Control Bar */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-[13px] text-[var(--text-secondary)] space-y-1">

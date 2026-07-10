@@ -51,45 +51,18 @@ export function VisitorCard() {
   }, []);
 
   return (
-    <div className="server-card p-6 flex flex-col relative overflow-hidden group">
-      <div className="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--border-subtle)]">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
-          <UserIcon className="w-7 h-7 text-white" />
-        </div>
-        <div className="flex flex-col">
-          <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-            访客
-          </h3>
-          <p className="text-[14px] text-[var(--text-secondary)]">
-            {visitor ? `${visitor.city || visitor.country},` : "Loading..."}
-          </p>
-          <p className="text-[13px] font-medium text-[var(--text-primary)] mt-0.5">
-            {visitor ? `Welcome from ${visitor.country}!` : "Welcome!"}
-          </p>
-        </div>
+    <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
+      <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
+        <UserIcon className="w-4 h-4" />
       </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-          <Monitor size={16} className="shrink-0" />
-          <span className="text-[14px] truncate">{os}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-          <Search size={16} className="shrink-0" />
-          <span className="text-[14px] truncate">{browser}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-          <MapPin size={16} className="shrink-0 text-blue-500" />
-          <span className="text-[14px] font-mono truncate">{visitor?.ip || "..."}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-          <ShieldCheck size={16} className="shrink-0" />
-          <span className="text-[14px] truncate">{visitor?.org || "..."}</span>
-        </div>
-        <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-          <Clock size={16} className="shrink-0" />
-          <span className="text-[14px] truncate">{date}</span>
-        </div>
+      <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1 truncate" title={visitor ? [visitor.city, visitor.country].filter(Boolean).join(", ") : "Loading..."}>
+        {visitor ? visitor.country : "-"}
+      </div>
+      <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center justify-between">
+        <span className="truncate">访客 · {visitor ? visitor.ip : "..."}</span>
+        <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)] shrink-0">
+          {os === "Unknown OS" ? "N/A" : os} / {browser === "Unknown Browser" ? "N/A" : browser.split(" ")[0]}
+        </span>
       </div>
     </div>
   );

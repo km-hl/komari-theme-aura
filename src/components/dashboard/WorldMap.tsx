@@ -206,7 +206,7 @@ export default function WorldMap() {
     if (!code) return emptyColor;
     const data = regionStatusMap.get(code);
     if (!data) return emptyColor;
-    if (data.status === "online") return "var(--color-primary)";
+    if (data.status === "online") return "var(--status-info)";
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
     return emptyColor;
@@ -283,7 +283,7 @@ export default function WorldMap() {
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)] pointer-events-none">
         <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-info)]"></div>
             全部在线
           </div>
           <div className="flex items-center gap-2">
