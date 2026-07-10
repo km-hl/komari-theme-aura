@@ -55,27 +55,60 @@ export default function WorldMap() {
   const [rotation, setRotation] = useState({ x: 0, y: -10 });
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsDragging(true);
-    // Prevent text selection only for mouse events (touch prevents break scrolling)
+    // Prevent text selection only for mouse events
     if (e.type === 'mousedown') {
       e.preventDefault();
+      setIsDragging(true);
+      setDragStart({ x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY });
     }
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setDragStart({ x: clientX, y: clientY });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setInitialPinchDist(dist);
+    } else if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    }
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    setInitialPinchDist(null);
   };
 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (e.type === 'touchmove') {
+      const te = e as React.TouchEvent;
+      if (te.touches.length === 2 && initialPinchDist != null) {
+        te.preventDefault(); // prevent browser zoom
+        const dist = Math.hypot(
+          te.touches[0].clientX - te.touches[1].clientX,
+          te.touches[0].clientY - te.touches[1].clientY
+        );
+        const scaleChange = dist / initialPinchDist;
+        setZoom(z => Math.min(Math.max(1, z * scaleChange), 3));
+        setInitialPinchDist(dist);
+        return;
+      }
+    }
+
     if (!isDragging) return;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    // For single touch move, prevent default scrolling so we can rotate the globe
+    if (e.type === 'touchmove') {
+      e.preventDefault();
+    }
+
+    const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
     const deltaX = clientX - dragStart.x;
     const deltaY = clientY - dragStart.y;
     
@@ -168,17 +201,18 @@ export default function WorldMap() {
 
   const getColor = (geoId: string) => {
     const code = numericToAlpha2[geoId];
-    if (!code) return "var(--fill-quaternary, #1e293b)";
+    const emptyColor = "color-mix(in srgb, var(--text-primary) 5%, transparent)";
+    if (!code) return emptyColor;
     const data = regionStatusMap.get(code);
-    if (!data) return "var(--fill-quaternary, #1e293b)";
-    if (data.status === "online") return "var(--status-success)";
+    if (!data) return emptyColor;
+    if (data.status === "online") return "var(--color-primary)";
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
-    return "var(--fill-quaternary, #1e293b)";
+    return emptyColor;
   };
 
   return (
-    <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center h-[350px] sm:h-[450px]">
+    <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center h-[400px] sm:h-[550px]">
       <div 
         ref={containerRef}
         className="w-full h-full relative cursor-grab active:cursor-grabbing transition-transform duration-75 select-none"
@@ -187,9 +221,10 @@ export default function WorldMap() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onMouseMove={handleMouseMove}
-        onTouchStart={handleMouseDown}
+        onTouchStart={handleTouchStart}
         onTouchEnd={handleMouseUp}
         onTouchMove={handleMouseMove}
+        onTouchCancel={handleMouseUp}
       >
         <ComposableMap
           projection="geoOrthographic"
@@ -198,8 +233,8 @@ export default function WorldMap() {
           height={400}
           style={{ width: "100%", height: "100%", pointerEvents: "none" }}
         >
-          <Sphere id="sphere" stroke="#1e293b" strokeWidth={0.5} fill="#020617" />
-          <Graticule stroke="#334155" strokeWidth={0.5} opacity={0.3} />
+          <Sphere id="sphere" stroke="color-mix(in srgb, var(--border) 50%, transparent)" strokeWidth={0.5} fill="transparent" />
+          <Graticule stroke="color-mix(in srgb, var(--border) 50%, transparent)" strokeWidth={0.5} opacity={0.5} />
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -247,7 +282,7 @@ export default function WorldMap() {
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg p-3 flex flex-col gap-2 text-xs font-medium text-[var(--text-secondary)] pointer-events-none">
         <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-success)]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]"></div>
             全部在线
           </div>
           <div className="flex items-center gap-2">
