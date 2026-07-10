@@ -131,8 +131,6 @@ export function ThemeManage() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
-  const [draftCustomExchangeApi, setDraftCustomExchangeApi] = useState<string | undefined>();
-  const [draftFixedExchangeRate, setDraftFixedExchangeRate] = useState<string | undefined>();
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
@@ -174,23 +172,13 @@ export function ThemeManage() {
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
   );
-  const sourceCustomExchangeApi = useMemo(
-    () => (config?.theme_settings as any)?.customExchangeApi as string | undefined,
-    [config?.theme_settings],
-  );
-  const sourceFixedExchangeRate = useMemo(
-    () => (config?.theme_settings as any)?.fixedExchangeRate as string | undefined,
-    [config?.theme_settings],
-  );
 
   useEffect(() => {
     if (!config) return;
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
-    setDraftCustomExchangeApi(sourceCustomExchangeApi);
-    setDraftFixedExchangeRate(sourceFixedExchangeRate);
     setDraftBindings(sourceBindings);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings, sourceCustomExchangeApi, sourceFixedExchangeRate]);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -238,8 +226,6 @@ export function ThemeManage() {
   const isDirty =
     draftAppearance !== sourceAppearance ||
     draftPriceTagColor !== sourcePriceTagColor ||
-    draftCustomExchangeApi !== sourceCustomExchangeApi ||
-    draftFixedExchangeRate !== sourceFixedExchangeRate ||
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
@@ -261,8 +247,6 @@ export function ThemeManage() {
         ...baseSettings,
         defaultAppearance: draftAppearance,
         priceTagColor: draftPriceTagColor,
-        customExchangeApi: draftCustomExchangeApi,
-        fixedExchangeRate: draftFixedExchangeRate,
         homepagePingBindings: pruneBindings(draftBindings),
       };
       await saveThemeSettings(config.theme, nextSettings);
@@ -401,7 +385,7 @@ export function ThemeManage() {
         title="节点卡片设置"
         description="自定义节点卡片中价格与计费周期标签的主题颜色。"
         aside={
-          <div className="w-4 h-4 rounded" style={{ background: draftPriceTagColor || "#a855f7" }} />
+          <div className="w-5 h-5 rounded-md" style={{ background: draftPriceTagColor || "#a855f7" }} />
         }
       >
         <div className="surface-inset px-4 py-4 flex items-center justify-between">
@@ -411,7 +395,7 @@ export function ThemeManage() {
                type="color" 
                value={draftPriceTagColor || "#a855f7"} 
                onChange={e => setDraftPriceTagColor(e.target.value)} 
-               className="w-8 h-8 rounded cursor-pointer border-0 p-0" 
+               className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg" 
              />
              {draftPriceTagColor && (
                <button 
@@ -422,37 +406,6 @@ export function ThemeManage() {
                  恢复默认
                </button>
              )}
-          </div>
-        </div>
-      </InstancePanel>
-
-      <InstancePanel
-        title="汇率设置"
-        description="由于部分地区公共汇率 API 无法直连，可在此处设置自定义汇率或 API。"
-        aside={<RefreshCw size={16} />}
-      >
-        <div className="surface-inset px-4 py-4 flex flex-col gap-4 text-[13px] text-[var(--text-primary)]">
-          <div className="flex flex-col gap-2">
-            <label className="font-medium">固定汇率 (USD 兑 CNY)</label>
-            <input
-              type="number"
-              placeholder="例如: 7.25"
-              value={draftFixedExchangeRate || ""}
-              onChange={e => setDraftFixedExchangeRate(e.target.value)}
-              className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded px-3 py-1.5 outline-none focus:border-[var(--text-primary)] transition-colors"
-            />
-            <span className="text-[12px] text-[var(--text-tertiary)]">如果您填入了此项，系统将不再从网络获取实时汇率，而是使用此固定汇率。</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="font-medium">自定义汇率 API</label>
-            <input
-              type="text"
-              placeholder="https://api.exchangerate-api.com/v4/latest/USD"
-              value={draftCustomExchangeApi || ""}
-              onChange={e => setDraftCustomExchangeApi(e.target.value)}
-              className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded px-3 py-1.5 outline-none focus:border-[var(--text-primary)] transition-colors"
-            />
-            <span className="text-[12px] text-[var(--text-tertiary)]">当固定汇率为空时生效。支持 exchangerate-api 等兼容格式。</span>
           </div>
         </div>
       </InstancePanel>

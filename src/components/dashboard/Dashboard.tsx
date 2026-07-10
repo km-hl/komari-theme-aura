@@ -4,6 +4,7 @@ import { useGlobalStats } from "@/hooks/useNode";
 import { formatBytes } from "@/utils/format";
 import WorldMap from "./WorldMap";
 import { useValueStats } from "@/hooks/useValueStats";
+import { VisitorCard } from "./VisitorCard";
 
 export function Dashboard() {
   const stats = useGlobalStats();
@@ -140,6 +141,8 @@ export function Dashboard() {
             </span>
           </div>
         </div>
+
+        <VisitorCard />
 
       </div>
       {showMap && <WorldMap />}

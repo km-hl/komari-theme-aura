@@ -168,20 +168,20 @@ export default function WorldMap() {
 
   const getColor = (geoId: string) => {
     const code = numericToAlpha2[geoId];
-    if (!code) return "var(--fill-quaternary, #334155)";
+    if (!code) return "var(--fill-quaternary, #1e293b)";
     const data = regionStatusMap.get(code);
-    if (!data) return "var(--fill-quaternary, #334155)";
+    if (!data) return "var(--fill-quaternary, #1e293b)";
     if (data.status === "online") return "var(--status-success)";
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
-    return "var(--fill-quaternary, #334155)";
+    return "var(--fill-quaternary, #1e293b)";
   };
 
   return (
-    <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center">
+    <div className="relative w-full overflow-hidden server-card mt-6 p-4 flex justify-center items-center h-[350px] sm:h-[450px]">
       <div 
         ref={containerRef}
-        className="w-full max-w-[800px] aspect-[2/1] relative cursor-grab active:cursor-grabbing transition-transform duration-75 select-none"
+        className="w-full h-full relative cursor-grab active:cursor-grabbing transition-transform duration-75 select-none"
         style={{ transform: `scale(${zoom})`, transformOrigin: "center center", touchAction: "none" }}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
@@ -198,8 +198,8 @@ export default function WorldMap() {
           height={400}
           style={{ width: "100%", height: "100%", pointerEvents: "none" }}
         >
-          <Sphere id="sphere" stroke="var(--border-subtle)" strokeWidth={0.5} fill="var(--bg-card)" />
-          <Graticule stroke="var(--border-subtle)" strokeWidth={0.5} opacity={0.5} />
+          <Sphere id="sphere" stroke="#1e293b" strokeWidth={0.5} fill="#020617" />
+          <Graticule stroke="#334155" strokeWidth={0.5} opacity={0.3} />
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -259,6 +259,22 @@ export default function WorldMap() {
             全部离线
           </div>
         </div>
+
+      {/* Zoom Controls */}
+      <div className="absolute right-4 bottom-4 flex flex-col gap-2 pointer-events-auto">
+        <button 
+          onClick={() => setZoom(z => Math.min(3, z + 0.3))} 
+          className="w-8 h-8 flex items-center justify-center bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] shadow-sm font-bold text-lg leading-none"
+        >
+          +
+        </button>
+        <button 
+          onClick={() => setZoom(z => Math.max(1, z - 0.3))} 
+          className="w-8 h-8 flex items-center justify-center bg-[var(--surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] shadow-sm font-bold text-lg leading-none"
+        >
+          -
+        </button>
+      </div>
     </div>
   );
 }
