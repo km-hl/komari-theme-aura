@@ -57,62 +57,42 @@ export const fetchGlobalRates = async (customApi?: string): Promise<ExchangeRate
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  const fetchWithFallback = async () => {
-    const apis = [
-      "https://api.exchangerate-api.com/v4/latest/USD",
-      "https://open.er-api.com/v6/latest/USD",
-      "https://api.frankfurter.dev/v1/latest?base=USD",
-      "https://api.frankfurter.dev/v2/rates?base=USD",
-      "https://api.frankfurter.app/latest?from=USD",
-      "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
-    ];
-    if (customApi) apis.unshift(customApi);
-    
-    for (const url of apis) {
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          // Normalize frankfurter v2 API array structure
-          if (Array.isArray(data)) {
-            return {
-              date: data[0]?.date,
-              rates: Object.fromEntries(data.map((item: any) => [item.quote, item.rate]))
-            };
-          }
-          // Normalize fawazahmed0 API structure
-          if (data.usd && !data.rates) {
-            data.rates = data.usd;
-          }
-          return data;
-        }
-      } catch (e) {
-        console.warn(`Failed to fetch from ${url}`, e);
-      }
-    }
-    throw new Error("All exchange rate APIs failed");
-  };
+  const url = customApi || "https://api.frankfurter.app/latest?from=USD";
 
-  globalRatesPromise = fetchWithFallback()
-    .then(data => {
+  globalRatesPromise = fetch(url)
+    .then(async (res) => {
+      if (!res.ok) throw new Error("Failed to fetch rates");
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        const rates = {
+          base: "USD",
+          date: data[0]?.date || new Date().toLocaleString(),
+          rates: Object.fromEntries(data.map((item: any) => [item.quote, item.rate]))
+        };
+        globalRatesCache = rates;
+        return rates;
+      }
+
       const rates = {
         base: "USD",
         date: data.date || data.time_last_update_utc || new Date().toLocaleString(),
         rates: {
-          USD: 1, // In case omitting base currency
-          ...Object.fromEntries(Object.entries(data.rates).map(([k, v]) => [k.toUpperCase(), v as number]))
+          USD: 1,
+          ...Object.fromEntries(Object.entries(data.rates || data.usd || {}).map(([k, v]) => [k.toUpperCase(), v as number]))
         }
       };
       globalRatesCache = rates;
       return rates;
     })
     .catch(err => {
-      console.warn("Failed to load exchange rates", err);
+      console.warn("Failed to load rates", err);
       return null;
     })
     .finally(() => {
       globalRatesPromise = null;
     });
+
 
   return globalRatesPromise;
 };
