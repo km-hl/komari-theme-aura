@@ -90,13 +90,13 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 刷新汇率
               </button>
 
-              <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1 gap-1 shadow-sm">
+              <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1.5 gap-1 shadow-sm">
                 {TARGET_CURRENCIES.map(c => (
                   <button
                     key={c}
                     onClick={() => setTargetCurrency(c)}
                     className={clsx(
-                      "px-3.5 py-1 text-[11px] font-bold rounded-full transition-all whitespace-nowrap tracking-wide",
+                      "px-4 py-1.5 text-[12px] font-bold rounded-full transition-all whitespace-nowrap tracking-wide",
                       targetCurrency === c 
                         ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
@@ -111,30 +111,30 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
 
           {/* Stats Cards */}
           {view === "residual" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">全部剩余价值</div>
+            <div className="flex flex-col gap-3 mb-8">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div className="text-[14px] text-[var(--text-secondary)] font-medium">全部剩余价值</div>
                 <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                   {targetCurrency} {loadingRates ? "-" : totalResidual.toFixed(2)}
                 </div>
               </div>
-              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总价值</div>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div className="text-[14px] text-[var(--text-secondary)] font-medium">总价值</div>
                 <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                   {targetCurrency} {loadingRates ? "-" : totalValue.toFixed(2)}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总月成本</div>
+            <div className="flex flex-col gap-3 mb-8">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div className="text-[14px] text-[var(--text-secondary)] font-medium">总月成本</div>
                 <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                   {targetCurrency} {loadingRates ? "-" : totalMonthlyCost.toFixed(2)}
                 </div>
               </div>
-              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[16px] p-5">
-                <div className="text-[13px] text-[var(--text-secondary)] font-medium mb-2">总年成本</div>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                <div className="text-[14px] text-[var(--text-secondary)] font-medium">总年成本</div>
                 <div className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                   {targetCurrency} {loadingRates ? "-" : (totalMonthlyCost * 12).toFixed(2)}
                 </div>
@@ -154,7 +154,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
                 className={clsx(
-                  "px-3 py-1.5 text-[12px] font-medium rounded-full transition-all flex items-center gap-1.5",
+                  "px-4 py-2 text-[12px] font-medium rounded-full transition-all flex items-center gap-2",
                   filterType === tab.id 
                     ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
@@ -162,7 +162,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
               >
                 <span>{tab.label}</span>
                 <span className={clsx(
-                  "text-[11px] px-1.5 py-0.5 rounded-full font-bold",
+                  "text-[11px] px-2 py-0.5 rounded-full font-bold",
                   filterType === tab.id ? "bg-[color-mix(in_srgb,var(--bg-base)_20%,transparent)]" : "bg-[var(--border-subtle)] text-[var(--text-primary)]"
                 )}>
                   {tab.count}
