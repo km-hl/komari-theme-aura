@@ -55,6 +55,7 @@ export default function WorldMap() {
   const [rotation, setRotation] = useState({ x: 0, y: -10 });
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
