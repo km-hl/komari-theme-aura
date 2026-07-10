@@ -50,14 +50,13 @@ export function normalizeCurrency(c: string | null | undefined): string {
 }
 
 let globalRatesCache: ExchangeRates | null = null;
-let globalRatesPromise: Promise<ExchangeRates> | null = null;
+let globalRatesPromise: Promise<ExchangeRates | null> | null = null;
 
-export const fetchGlobalRates = async (): Promise<ExchangeRates> => {
+export const fetchGlobalRates = async (): Promise<ExchangeRates | null> => {
   if (globalRatesCache) return globalRatesCache;
   if (globalRatesPromise) return globalRatesPromise;
 
-  globalRatesPromise = fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
-    .catch(() => fetch("https://latest.currency-api.pages.dev/v1/currencies/usd.json"))
+  globalRatesPromise = fetch("https://api.frankfurter.app/latest?from=USD")
     .then(res => {
       if (!res.ok) throw new Error("Failed to fetch rates");
       return res.json();
@@ -66,10 +65,17 @@ export const fetchGlobalRates = async (): Promise<ExchangeRates> => {
       const rates = {
         base: "USD",
         date: data.date || new Date().toLocaleString(),
-        rates: Object.fromEntries(Object.entries(data.usd).map(([k, v]) => [k.toUpperCase(), v as number]))
+        rates: {
+          USD: 1, // Frankfurter omitting base currency
+          ...Object.fromEntries(Object.entries(data.rates).map(([k, v]) => [k.toUpperCase(), v as number]))
+        }
       };
       globalRatesCache = rates;
       return rates;
+    })
+    .catch(err => {
+      console.warn("Failed to load Frankfurter rates", err);
+      return null;
     })
     .finally(() => {
       globalRatesPromise = null;

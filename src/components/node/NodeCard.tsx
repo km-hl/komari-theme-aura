@@ -1,5 +1,6 @@
 import { memo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
 import {
   Cpu,
   Gauge,
@@ -83,6 +84,7 @@ export const NodeCard = memo(function NodeCard({
 }: {
   uuid: string;
 }) {
+  const { data: config } = usePublicConfig();
   const { resolvedAppearance } = usePreferences();
   const node = useNode(uuid);
   const trafficTrend = useNodeTrafficTrend(uuid);
@@ -123,15 +125,16 @@ export const NodeCard = memo(function NodeCard({
     if (node.billing_cycle) {
       const cycle = String(node.billing_cycle);
       const cycleMap: Record<string, string> = {
-        "365": "年",
-        "30": "月",
-        "90": "季",
-        "180": "半年",
-        "1": "天"
+        "365": "年付",
+        "30": "月付",
+        "90": "季付",
+        "180": "半年付",
+        "1": "日付"
       };
-      priceStr += ` / ${cycleMap[cycle] || cycle}`;
+      priceStr += ` / ${cycleMap[cycle] || cycle + "天"}`;
     }
-    footerTags.push({ label: priceStr, color: "purple" });
+    const customColor = (config?.theme_settings as any)?.priceTagColor;
+    footerTags.push({ label: priceStr, color: customColor || "purple" });
   }
   const expire = formatExpireDays(node.expired_at);
   const uptime = formatUptimeDays(node.uptime);
@@ -173,8 +176,8 @@ export const NodeCard = memo(function NodeCard({
         </div>
       )}
 
-      <div className="server-card-content">
-        <header className="server-card-header">
+      <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-card-hover)] px-5 py-3 lg:px-6">
+        <div className="flex items-center justify-between">
           <div className="server-card-title-block">
             <div className="server-card-title-row">
               <Flag region={node.region} size={15} />
@@ -218,9 +221,11 @@ export const NodeCard = memo(function NodeCard({
           >
             <ExternalLink size={15} strokeWidth={2} />
           </Link>
-        </header>
+        </div>
+      </div>
 
-        <div className="server-card-stack">
+      <div className="flex flex-col flex-1 p-5 lg:p-6">
+        <div className="flex flex-col flex-1 gap-5 lg:gap-6">
           <div className="card-metric-section server-metric-grid">
             <MetricBar
               icon={<Cpu size={13} strokeWidth={2} />}
@@ -387,8 +392,8 @@ export const NodeCard = memo(function NodeCard({
           </div>
         </div>
 
-        <div className="server-card-footer">
-          <div className="server-card-meta-grid">
+        <div className="mt-auto pt-6">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5 mb-5">
             <FooterStat
               icon={<Calendar size={13} strokeWidth={2} />}
               label="到期"
@@ -404,27 +409,38 @@ export const NodeCard = memo(function NodeCard({
               color="var(--progress-cpu)"
             />
           </div>
-          {footerTags.length > 0 && (
-            <div className="dstatus-tags-row">
-              {footerTags.slice(0, 6).map((tag, i) => (
-                <span
-                  key={`${tag.label}-${i}`}
-                  data-tag={tag.color}
-                  className="dstatus-tag-chip"
-                  style={{
-                    background: "var(--tag-bg)",
-                    color: "var(--tag-fg)",
-                  }}
-                  title={tag.label}
-                >
-                  {tag.label}
-                </span>
-              ))}
-              {footerTags.length > 6 && (
-                <span className="dstatus-tag-more">+{footerTags.length - 6}</span>
-              )}
-            </div>
-          )}
+          
+          <div className="mt-auto pt-2">
+            {footerTags.length > 0 && (
+              <div className="dstatus-tags-row">
+                {footerTags.slice(0, 6).map((tag, i) => {
+                  const isHex = tag.color.startsWith("#");
+                  return (
+                    <span
+                      key={`${tag.label}-${i}`}
+                      data-tag={isHex ? undefined : tag.color}
+                      className="dstatus-tag-chip"
+                      style={isHex ? {
+                        background: `color-mix(in srgb, ${tag.color} 15%, transparent)`,
+                        color: tag.color,
+                        borderColor: `color-mix(in srgb, ${tag.color} 30%, transparent)`
+                      } : {
+                        background: "var(--tag-bg)",
+                        color: "var(--tag-fg)",
+                      }}
+                      title={tag.label}
+                    >
+                      {tag.label}
+                    </span>
+                  );
+                })}
+                {footerTags.length > 6 && (
+                  <span className="dstatus-tag-more">+{footerTags.length - 6}</span>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </article>

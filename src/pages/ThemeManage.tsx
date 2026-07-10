@@ -23,7 +23,12 @@ import {
   getAdminPingTasks,
   saveThemeSettings,
 } from "@/services/api";
-import type { AdminClient, PingTask, ThemeSettings } from "@/types/komari";
+import type { AdminClient, PingTask, ThemeSettings as BaseThemeSettings } from "@/types/komari";
+
+export interface ThemeSettings extends BaseThemeSettings {
+  priceTagColor?: string;
+}
+
 import {
   normalizeHomepagePingTaskBindings,
   type HomepagePingTaskBindings,
@@ -125,6 +130,7 @@ export function ThemeManage() {
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
+  const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
@@ -158,6 +164,10 @@ export function ThemeManage() {
     () => normalizeAppearance(config?.theme_settings?.defaultAppearance),
     [config?.theme_settings?.defaultAppearance],
   );
+  const sourcePriceTagColor = useMemo(
+    () => (config?.theme_settings as any)?.priceTagColor as string | undefined,
+    [config?.theme_settings],
+  );
   const sourceBindings = useMemo(
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
@@ -166,8 +176,9 @@ export function ThemeManage() {
   useEffect(() => {
     if (!config) return;
     setDraftAppearance(sourceAppearance);
+    setDraftPriceTagColor(sourcePriceTagColor);
     setDraftBindings(sourceBindings);
-  }, [config, sourceAppearance, sourceBindings]);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -214,6 +225,7 @@ export function ThemeManage() {
   );
   const isDirty =
     draftAppearance !== sourceAppearance ||
+    draftPriceTagColor !== sourcePriceTagColor ||
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
@@ -227,13 +239,14 @@ export function ThemeManage() {
     setError(null);
     setMessage(null);
     try {
-      const baseSettings: ThemeSettings & Record<string, unknown> = {
+      const baseSettings = {
         ...(config.theme_settings ?? {}),
       };
-      delete baseSettings.homepagePingTask;
-      const nextSettings: ThemeSettings & Record<string, unknown> = {
+      delete (baseSettings as any).homepagePingTask;
+      const nextSettings = {
         ...baseSettings,
         defaultAppearance: draftAppearance,
+        priceTagColor: draftPriceTagColor,
         homepagePingBindings: pruneBindings(draftBindings),
       };
       await saveThemeSettings(config.theme, nextSettings);
@@ -255,6 +268,7 @@ export function ThemeManage() {
 
   const handleReset = () => {
     setDraftAppearance(sourceAppearance);
+    setDraftPriceTagColor(sourcePriceTagColor);
     setDraftBindings(sourceBindings);
     setMessage(null);
     setError(null);
@@ -364,6 +378,35 @@ export function ThemeManage() {
               <span>{label}</span>
             </button>
           ))}
+        </div>
+      </InstancePanel>
+
+      <InstancePanel
+        title="节点卡片设置"
+        description="自定义节点卡片中价格与计费周期标签的主题颜色。"
+        aside={
+          <div className="w-4 h-4 rounded" style={{ background: draftPriceTagColor || "#a855f7" }} />
+        }
+      >
+        <div className="surface-inset px-4 py-4 flex items-center justify-between">
+          <div className="text-[13px] text-[var(--text-primary)]">计费标签颜色</div>
+          <div className="flex items-center gap-3">
+             <input 
+               type="color" 
+               value={draftPriceTagColor || "#a855f7"} 
+               onChange={e => setDraftPriceTagColor(e.target.value)} 
+               className="w-8 h-8 rounded cursor-pointer border-0 p-0" 
+             />
+             {draftPriceTagColor && (
+               <button 
+                 type="button"
+                 onClick={() => setDraftPriceTagColor(undefined)} 
+                 className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+               >
+                 恢复默认
+               </button>
+             )}
+          </div>
         </div>
       </InstancePanel>
 

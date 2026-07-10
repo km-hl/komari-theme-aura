@@ -74,8 +74,8 @@ export default function WorldMap() {
     const deltaY = clientY - dragStart.y;
     
     setRotation(r => ({
-      x: (r.x + deltaX * 0.4) % 360,
-      y: Math.max(-80, Math.min(80, r.y - deltaY * 0.4))
+      x: (r.x - deltaX * 0.4) % 360,
+      y: Math.max(-80, Math.min(80, r.y + deltaY * 0.4))
     }));
     setDragStart({ x: clientX, y: clientY });
   };
