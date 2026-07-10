@@ -131,6 +131,8 @@ export function ThemeManage() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
+  const [draftCustomExchangeApi, setDraftCustomExchangeApi] = useState<string | undefined>();
+  const [draftFixedExchangeRate, setDraftFixedExchangeRate] = useState<string | undefined>();
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
@@ -172,13 +174,23 @@ export function ThemeManage() {
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
   );
+  const sourceCustomExchangeApi = useMemo(
+    () => (config?.theme_settings as any)?.customExchangeApi as string | undefined,
+    [config?.theme_settings],
+  );
+  const sourceFixedExchangeRate = useMemo(
+    () => (config?.theme_settings as any)?.fixedExchangeRate as string | undefined,
+    [config?.theme_settings],
+  );
 
   useEffect(() => {
     if (!config) return;
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
+    setDraftCustomExchangeApi(sourceCustomExchangeApi);
+    setDraftFixedExchangeRate(sourceFixedExchangeRate);
     setDraftBindings(sourceBindings);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings]);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings, sourceCustomExchangeApi, sourceFixedExchangeRate]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -225,9 +237,9 @@ export function ThemeManage() {
   );
   const isDirty =
     draftAppearance !== sourceAppearance ||
-    draftPriceTagColor !== (config?.theme_settings as any)?.priceTagColor ||
-    draftCustomExchangeApi !== (config?.theme_settings as any)?.customExchangeApi ||
-    draftFixedExchangeRate !== (config?.theme_settings as any)?.fixedExchangeRate ||
+    draftPriceTagColor !== sourcePriceTagColor ||
+    draftCustomExchangeApi !== sourceCustomExchangeApi ||
+    draftFixedExchangeRate !== sourceFixedExchangeRate ||
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(

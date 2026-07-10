@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import { getSnapshot, subscribe } from "@/services/wsStore";
-import { useVisibleNodeUuids } from "@/hooks/useNode";
+import { useVisibleNodeUuids, useNodes } from "@/hooks/useNode";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
 
 export const TARGET_CURRENCIES = ["USD", "CNY", "EUR", "GBP"] as const;
 export type TargetCurrency = typeof TARGET_CURRENCIES[number];
