@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Monitor, ShieldCheck, Clock, MapPin, Search } from "lucide-react";
+
 
 export function VisitorCard() {
   const [visitor, setVisitor] = useState<{
@@ -11,7 +11,7 @@ export function VisitorCard() {
 
   const [os, setOs] = useState("Unknown OS");
   const [browser, setBrowser] = useState("Unknown Browser");
-  const [date, setDate] = useState("");
+
 
   useEffect(() => {
     // Parse UA
@@ -32,9 +32,6 @@ export function VisitorCard() {
     else if (ua.indexOf("MSIE") !== -1 || ua.indexOf("Trident/") !== -1) browserName = "Internet Explorer";
     setBrowser(browserName);
 
-    // Date format like 2026年7月10日
-    const d = new Date();
-    setDate(`${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`);
 
     // Fetch IP info
     fetch("https://get.geojs.io/v1/ip/geo.json")
