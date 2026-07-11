@@ -9,13 +9,11 @@ import {
 } from "@/components/instance/chartShared";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 
-const FIXED_PING_HOURS = 24;
-
 export function Instance() {
   const { uuid } = useParams<{ uuid: string }>();
   const { data: config } = usePublicConfig();
   const [chartType, setChartType] = useState<"load" | "ping">("load");
-  const [loadHours, setLoadHours] = useState(0);
+  const [chartHours, setChartHours] = useState(0);
   const chartControlsRef = useRef<HTMLDivElement | null>(null);
 
   const loadRanges = useMemo(
@@ -39,10 +37,10 @@ export function Instance() {
   }, [uuid]);
 
   useEffect(() => {
-    if (!loadRanges.some((range) => range.value === loadHours)) {
-      setLoadHours(loadRanges[0]?.value ?? 0);
+    if (!loadRanges.some((range) => range.value === chartHours)) {
+      setChartHours(loadRanges[0]?.value ?? 0);
     }
-  }, [loadHours, loadRanges]);
+  }, [chartHours, loadRanges]);
 
   useEffect(() => {
     if (!showPingChart && chartType === "ping") {
@@ -85,27 +83,25 @@ export function Instance() {
             </button>
           )}
         </div>
-        {chartType === "load" && (
-          <div
-            key={`${chartType}-ranges`}
-            className="instance-segmented is-scrollable"
-          >
-            {loadRanges.map((range) => (
-              <button
-                key={range.value}
-                type="button"
-                data-active={loadHours === range.value ? "true" : "false"}
-                onClick={() => {
-                  startTransition(() => {
-                    setLoadHours(range.value);
-                  });
-                }}
-              >
-                {range.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div
+          key="chart-ranges"
+          className="instance-segmented is-scrollable mt-3"
+        >
+          {loadRanges.map((range) => (
+            <button
+              key={range.value}
+              type="button"
+              data-active={chartHours === range.value ? "true" : "false"}
+              onClick={() => {
+                startTransition(() => {
+                  setChartHours(range.value);
+                });
+              }}
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="instance-chart-stage">
         <div
@@ -113,7 +109,7 @@ export function Instance() {
           hidden={chartType !== "load"}
           aria-hidden={chartType !== "load"}
         >
-          <LoadChart uuid={uuid} hours={loadHours} active={chartType === "load"} />
+          <LoadChart uuid={uuid} hours={chartHours} active={chartType === "load"} />
         </div>
         <div
           className="instance-chart-view"
@@ -123,7 +119,7 @@ export function Instance() {
           {showPingChart ? (
             <PingChart
               uuid={uuid}
-              hours={FIXED_PING_HOURS}
+              hours={chartHours}
               active={chartType === "ping"}
             />
           ) : null}
