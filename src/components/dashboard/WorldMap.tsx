@@ -203,8 +203,7 @@ export default function WorldMap() {
     return cosC > 0;
   };
 
-  const getColor = (geoId: string) => {
-    const code = numericToAlpha2[geoId];
+  const getColorByCode = (code: string) => {
     const emptyColor = "color-mix(in srgb, var(--text-primary) 5%, transparent)";
     if (!code) return emptyColor;
     const data = regionStatusMap.get(code);
@@ -213,6 +212,11 @@ export default function WorldMap() {
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
     return emptyColor;
+  };
+
+  const getColor = (geoId: string) => {
+    const code = numericToAlpha2[geoId];
+    return getColorByCode(code || "");
   };
 
   return (
@@ -267,7 +271,8 @@ export default function WorldMap() {
             if (coords && isVisible(coords, rotation)) {
               return (
                 <Marker key={`marker-${code}`} coordinates={coords}>
-                  <foreignObject x="-25" y="-14" width="50" height="28" style={{ overflow: 'visible' }}>
+                  <circle r={2.5} fill={getColorByCode(code)} stroke="var(--surface)" strokeWidth={0.5} />
+                  <foreignObject x="-25" y="-16" width="50" height="30" style={{ overflow: 'visible' }}>
                     <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full px-1.5 py-0.5 shadow-md w-max gap-1.5 absolute left-1/2 -translate-x-1/2 select-none pointer-events-none">
                       <div className="w-3.5 h-3.5 flex items-center justify-center overflow-hidden rounded-sm">
                         <Flag region={code} size={14} />
