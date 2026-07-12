@@ -136,6 +136,7 @@ export function ThemeManage() {
   const [draftWallpaperUrl, setDraftWallpaperUrl] = useState("");
   const [draftWallpaperData, setDraftWallpaperData] = useState("");
   const [draftWallpaperOpacity, setDraftWallpaperOpacity] = useState(20);
+  const [draftCardOpacity, setDraftCardOpacity] = useState(75);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
@@ -193,6 +194,10 @@ export function ThemeManage() {
     () => ((config?.theme_settings as any)?.wallpaperOpacity as number) ?? 20,
     [config?.theme_settings],
   );
+  const sourceCardOpacity = useMemo(
+    () => ((config?.theme_settings as any)?.cardOpacity as number) ?? 75,
+    [config?.theme_settings],
+  );
   const sourceBindings = useMemo(
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
@@ -208,7 +213,8 @@ export function ThemeManage() {
     setDraftWallpaperUrl(sourceWallpaperUrl);
     setDraftWallpaperData(sourceWallpaperData);
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity]);
+    setDraftCardOpacity(sourceCardOpacity);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity, sourceCardOpacity]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -261,6 +267,7 @@ export function ThemeManage() {
     draftWallpaperUrl !== sourceWallpaperUrl ||
     draftWallpaperData !== sourceWallpaperData ||
     draftWallpaperOpacity !== sourceWallpaperOpacity ||
+    draftCardOpacity !== sourceCardOpacity ||
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
@@ -287,6 +294,7 @@ export function ThemeManage() {
         wallpaperUrl: draftWallpaperUrl,
         wallpaperData: draftWallpaperData,
         wallpaperOpacity: draftWallpaperOpacity,
+        cardOpacity: draftCardOpacity,
         homepagePingBindings: pruneBindings(draftBindings),
       };
       await saveThemeSettings(config.theme, nextSettings);
@@ -378,7 +386,7 @@ export function ThemeManage() {
   return (
     <div className="flex flex-col gap-5 py-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/" className="instance-page-back">
+        <Link to="/" className="inline-flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all font-medium text-[13px]">
           <ArrowLeft size={14} />
           返回首页
         </Link>
@@ -496,26 +504,38 @@ export function ThemeManage() {
       </InstancePanel>
 
       <InstancePanel title="地图点亮颜色" description="自定义首页地球仪上在线节点的点亮颜色。">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={draftMapRegionColor || "#a855f7"}
-              onChange={(e) => setDraftMapRegionColor(e.target.value)}
-              className="h-8 w-14 cursor-pointer rounded border-0 bg-transparent p-0"
-            />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-[13px] text-[var(--text-secondary)]">
+          <div className="flex items-center gap-2 min-w-[100px]">
+            地图点亮颜色
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            {["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"].map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setDraftMapRegionColor(color)}
+                className="w-6 h-6 rounded-full cursor-pointer transition-all outline-none"
+                style={{
+                  backgroundColor: color,
+                  transform: draftMapRegionColor === color ? "scale(1.2)" : "scale(1)",
+                  boxShadow: draftMapRegionColor === color ? `0 0 0 2px var(--bg-base), 0 0 0 4px ${color}` : "none",
+                }}
+                title={color}
+              />
+            ))}
+            <div className="w-px h-6 bg-[var(--border)] mx-1" />
             <button
               type="button"
               onClick={() => setDraftMapRegionColor(undefined)}
-              className="theme-manage-button is-compact"
-              disabled={!draftMapRegionColor}
+              className="text-[12px] px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] transition-colors"
+              style={{
+                borderColor: !draftMapRegionColor ? "var(--text-primary)" : "var(--border)",
+                color: !draftMapRegionColor ? "var(--text-primary)" : "inherit",
+              }}
             >
-              恢复默认
+              默认
             </button>
           </div>
-          {draftMapRegionColor && (
-            <p className="text-[12px] text-[var(--text-secondary)]">当前颜色值: {draftMapRegionColor}</p>
-          )}
         </div>
       </InstancePanel>
 
@@ -592,19 +612,35 @@ export function ThemeManage() {
           )}
 
           {draftWallpaperMode !== "none" && (
-            <div className="flex flex-col gap-2">
-              <label className="text-[13px] text-[var(--text-secondary)] font-medium flex justify-between">
-                <span>壁纸不透明度</span>
-                <span>{draftWallpaperOpacity}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={draftWallpaperOpacity}
-                onChange={(e) => setDraftWallpaperOpacity(parseInt(e.target.value, 10))}
-                className="w-full accent-[var(--color-primary)]"
-              />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] text-[var(--text-secondary)] font-medium flex justify-between">
+                  <span>壁纸不透明度</span>
+                  <span>{draftWallpaperOpacity}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={draftWallpaperOpacity}
+                  onChange={(e) => setDraftWallpaperOpacity(parseInt(e.target.value, 10))}
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] text-[var(--text-secondary)] font-medium flex justify-between">
+                  <span>卡片不透明度 (打开壁纸时生效)</span>
+                  <span>{draftCardOpacity}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={draftCardOpacity}
+                  onChange={(e) => setDraftCardOpacity(parseInt(e.target.value, 10))}
+                  className="w-full accent-[var(--color-primary)]"
+                />
+              </div>
             </div>
           )}
         </div>

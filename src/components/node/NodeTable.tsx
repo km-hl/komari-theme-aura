@@ -31,7 +31,7 @@ export function NodeTable({ uuids }: NodeTableProps) {
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm">
+    <div className="w-full overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-sm node-table-container">
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead>
           <tr className="border-b border-[var(--border-subtle)] text-[13px] text-[var(--text-tertiary)]">

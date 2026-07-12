@@ -12,9 +12,13 @@ export function AppShell() {
     : ts?.wallpaperMode === 'bing' ? 'https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN'
     : null;
   const wallpaperOpacity = (ts?.wallpaperOpacity ?? 20) / 100;
+  const cardOpacity = ts?.cardOpacity ?? 75;
 
   return (
-    <div className={`relative flex min-h-screen flex-col ${wallpaperUrl ? "has-wallpaper" : ""}`}>
+    <div 
+      className={`relative flex min-h-screen flex-col ${wallpaperUrl ? "has-wallpaper" : ""}`}
+      style={{ "--card-opacity": `${cardOpacity}%` } as React.CSSProperties}
+    >
       {wallpaperUrl && (
         <div 
           className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"

@@ -1747,9 +1747,10 @@
 /* Wallpaper Glassmorphism Enhancements */
 .has-wallpaper .server-card,
 .has-wallpaper .server-card-compact,
-.has-wallpaper .theme-manage-panel {
+.has-wallpaper .theme-manage-panel,
+.has-wallpaper .node-table-container {
   backdrop-filter: blur(20px) saturate(1.4);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) var(--card-opacity, 75%), transparent);
 }
 
 .has-wallpaper .site-footer {
