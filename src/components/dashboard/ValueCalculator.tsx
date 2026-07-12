@@ -175,10 +175,10 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
                 className={clsx(
-                  "px-6 py-2.5 text-[11px] font-semibold rounded-full transition-all flex items-center gap-2",
+                  "px-6 py-2.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-2 border",
                   filterType === tab.id 
-                    ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+                    ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
+                    : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
                 )}
               >
                 <span>{tab.label}</span>
