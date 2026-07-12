@@ -9,6 +9,7 @@ export function AppShell() {
   const ts = config?.theme_settings as any;
   const wallpaperUrl = ts?.wallpaperMode === 'custom_url' ? ts?.wallpaperUrl 
     : ts?.wallpaperMode === 'custom_upload' ? ts?.wallpaperData 
+    : ts?.wallpaperMode === 'bing' ? 'https://api.dujin.org/bing/1920.php'
     : null;
   const wallpaperOpacity = (ts?.wallpaperOpacity ?? 20) / 100;
 

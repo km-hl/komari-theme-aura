@@ -1,7 +1,7 @@
 {
   "name": "komari-theme-aura",
   "private": true,
-  "version": "1.0.59",
+  "version": "1.0.60",
   "type": "module",
   "description": "Aura theme for Komari Monitor",
   "author": "km-hl",

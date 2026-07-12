@@ -131,7 +131,7 @@ export function ThemeManage() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
-  const [draftWallpaperMode, setDraftWallpaperMode] = useState<"none" | "custom_url" | "custom_upload">("none");
+  const [draftWallpaperMode, setDraftWallpaperMode] = useState<"none" | "custom_url" | "custom_upload" | "bing">("none");
   const [draftWallpaperUrl, setDraftWallpaperUrl] = useState("");
   const [draftWallpaperData, setDraftWallpaperData] = useState("");
   const [draftWallpaperOpacity, setDraftWallpaperOpacity] = useState(20);
@@ -173,7 +173,7 @@ export function ThemeManage() {
     [config?.theme_settings],
   );
   const sourceWallpaperMode = useMemo(
-    () => ((config?.theme_settings as any)?.wallpaperMode as "none" | "custom_url" | "custom_upload") || "none",
+    () => ((config?.theme_settings as any)?.wallpaperMode as "none" | "custom_url" | "custom_upload" | "bing") || "none",
     [config?.theme_settings],
   );
   const sourceWallpaperUrl = useMemo(
@@ -498,6 +498,13 @@ export function ThemeManage() {
               onClick={() => setDraftWallpaperMode("none")}
             >
               无壁纸
+            </button>
+            <button
+              type="button"
+              data-active={draftWallpaperMode === "bing" ? "true" : "false"}
+              onClick={() => setDraftWallpaperMode("bing")}
+            >
+              必应每日
             </button>
             <button
               type="button"
