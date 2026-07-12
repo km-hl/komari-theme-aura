@@ -131,6 +131,10 @@ export function ThemeManage() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
+  const [draftWallpaperMode, setDraftWallpaperMode] = useState<"none" | "custom_url" | "custom_upload">("none");
+  const [draftWallpaperUrl, setDraftWallpaperUrl] = useState("");
+  const [draftWallpaperData, setDraftWallpaperData] = useState("");
+  const [draftWallpaperOpacity, setDraftWallpaperOpacity] = useState(20);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
@@ -168,6 +172,22 @@ export function ThemeManage() {
     () => (config?.theme_settings as any)?.priceTagColor as string | undefined,
     [config?.theme_settings],
   );
+  const sourceWallpaperMode = useMemo(
+    () => ((config?.theme_settings as any)?.wallpaperMode as "none" | "custom_url" | "custom_upload") || "none",
+    [config?.theme_settings],
+  );
+  const sourceWallpaperUrl = useMemo(
+    () => ((config?.theme_settings as any)?.wallpaperUrl as string) || "",
+    [config?.theme_settings],
+  );
+  const sourceWallpaperData = useMemo(
+    () => ((config?.theme_settings as any)?.wallpaperData as string) || "",
+    [config?.theme_settings],
+  );
+  const sourceWallpaperOpacity = useMemo(
+    () => ((config?.theme_settings as any)?.wallpaperOpacity as number) ?? 20,
+    [config?.theme_settings],
+  );
   const sourceBindings = useMemo(
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
@@ -178,7 +198,11 @@ export function ThemeManage() {
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
     setDraftBindings(sourceBindings);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings]);
+    setDraftWallpaperMode(sourceWallpaperMode);
+    setDraftWallpaperUrl(sourceWallpaperUrl);
+    setDraftWallpaperData(sourceWallpaperData);
+    setDraftWallpaperOpacity(sourceWallpaperOpacity);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -226,6 +250,10 @@ export function ThemeManage() {
   const isDirty =
     draftAppearance !== sourceAppearance ||
     draftPriceTagColor !== sourcePriceTagColor ||
+    draftWallpaperMode !== sourceWallpaperMode ||
+    draftWallpaperUrl !== sourceWallpaperUrl ||
+    draftWallpaperData !== sourceWallpaperData ||
+    draftWallpaperOpacity !== sourceWallpaperOpacity ||
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
@@ -247,6 +275,10 @@ export function ThemeManage() {
         ...baseSettings,
         defaultAppearance: draftAppearance,
         priceTagColor: draftPriceTagColor,
+        wallpaperMode: draftWallpaperMode,
+        wallpaperUrl: draftWallpaperUrl,
+        wallpaperData: draftWallpaperData,
+        wallpaperOpacity: draftWallpaperOpacity,
         homepagePingBindings: pruneBindings(draftBindings),
       };
       await saveThemeSettings(config.theme, nextSettings);
@@ -269,6 +301,10 @@ export function ThemeManage() {
   const handleReset = () => {
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
+    setDraftWallpaperMode(sourceWallpaperMode);
+    setDraftWallpaperUrl(sourceWallpaperUrl);
+    setDraftWallpaperData(sourceWallpaperData);
+    setDraftWallpaperOpacity(sourceWallpaperOpacity);
     setDraftBindings(sourceBindings);
     setMessage(null);
     setError(null);
@@ -301,6 +337,34 @@ export function ThemeManage() {
     (clientsError instanceof Error ? clientsError.message : null);
   const noTasksYet = !tasksLoading && !clientsLoading && sortedTasks.length === 0;
   const noFilteredTaskMatch = !tasksLoading && !clientsLoading && !noTasksYet && filteredTasks.length === 0;
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+        if (width > 1920) {
+          height = Math.round((height * 1920) / width);
+          width = 1920;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          setDraftWallpaperData(dataUrl);
+        }
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="flex flex-col gap-5 py-2">
@@ -419,6 +483,90 @@ export function ThemeManage() {
                </button>
              )}
           </div>
+        </div>
+      </InstancePanel>
+
+      <InstancePanel
+        title="壁纸设置"
+        description="选择仪表盘的背景壁纸，支持自定义 URL 或上传本地图片（自动缩放压缩）。壁纸仅在打开毛玻璃特效时有最佳效果。"
+      >
+        <div className="flex flex-col gap-6">
+          <div className="instance-segmented">
+            <button
+              type="button"
+              data-active={draftWallpaperMode === "none" ? "true" : "false"}
+              onClick={() => setDraftWallpaperMode("none")}
+            >
+              无壁纸
+            </button>
+            <button
+              type="button"
+              data-active={draftWallpaperMode === "custom_url" ? "true" : "false"}
+              onClick={() => setDraftWallpaperMode("custom_url")}
+            >
+              自定义 URL
+            </button>
+            <button
+              type="button"
+              data-active={draftWallpaperMode === "custom_upload" ? "true" : "false"}
+              onClick={() => setDraftWallpaperMode("custom_upload")}
+            >
+              上传图片
+            </button>
+          </div>
+          
+          {draftWallpaperMode === "custom_url" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[13px] text-[var(--text-secondary)] font-medium">图片 URL</label>
+              <input
+                type="text"
+                className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-[14px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                placeholder="https://example.com/wallpaper.jpg"
+                value={draftWallpaperUrl}
+                onChange={(e) => setDraftWallpaperUrl(e.target.value)}
+              />
+              {draftWallpaperUrl && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] h-32 bg-black/20 flex items-center justify-center">
+                   <img src={draftWallpaperUrl} alt="Wallpaper Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {draftWallpaperMode === "custom_upload" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[13px] text-[var(--text-secondary)] font-medium">上传本地图片 (自动压缩)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-[13px] text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[13px] file:font-semibold file:bg-[var(--bg-tertiary)] file:text-[var(--text-primary)] hover:file:bg-[var(--bg-card-hover)] cursor-pointer"
+                onChange={handleImageUpload}
+              />
+              {draftWallpaperData && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] h-32 bg-black/20 flex items-center justify-center relative">
+                   <img src={draftWallpaperData} alt="Wallpaper Preview" className="w-full h-full object-cover" />
+                   <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded">已压缩</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {draftWallpaperMode !== "none" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[13px] text-[var(--text-secondary)] font-medium flex justify-between">
+                <span>壁纸透明度</span>
+                <span>{draftWallpaperOpacity}%</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={draftWallpaperOpacity}
+                onChange={(e) => setDraftWallpaperOpacity(parseInt(e.target.value, 10))}
+                className="w-full accent-[var(--color-primary)]"
+              />
+            </div>
+          )}
         </div>
       </InstancePanel>
 

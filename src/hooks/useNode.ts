@@ -74,6 +74,8 @@ export function useGlobalStats() {
     let totalTrafficDown = 0;
     let currentNetUp = 0;
     let currentNetDown = 0;
+    let totalDiskUsed = 0;
+    let totalDiskTotal = 0;
     const regions = new Set<string>();
 
     for (const uuid of visibleUuids) {
@@ -86,6 +88,8 @@ export function useGlobalStats() {
       totalTrafficDown += node.trafficDown || 0;
       currentNetUp += node.netUp || 0;
       currentNetDown += node.netDown || 0;
+      totalDiskUsed += node.diskUsed || 0;
+      totalDiskTotal += node.diskTotal || 0;
     }
 
     return {
@@ -96,6 +100,8 @@ export function useGlobalStats() {
       totalTrafficDown,
       currentNetUp,
       currentNetDown,
+      totalDiskUsed,
+      totalDiskTotal,
     };
   }, [snap.byUuid, visibleUuids]);
 }

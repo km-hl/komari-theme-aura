@@ -1743,3 +1743,15 @@
     gap: 14px;
   }
 }
+
+/* Wallpaper Glassmorphism Enhancements */
+.has-wallpaper .server-card,
+.has-wallpaper .server-card-compact,
+.has-wallpaper .theme-manage-panel {
+  backdrop-filter: blur(20px) saturate(1.4);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.has-wallpaper .site-footer {
+  backdrop-filter: blur(16px);
+}

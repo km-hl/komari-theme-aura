@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Clock, Server, Activity, ArrowUp, ArrowDown, Map } from "lucide-react";
+import { Clock, Server, Activity, ArrowUp, ArrowDown, Map, HardDrive } from "lucide-react";
 import { useGlobalStats } from "@/hooks/useNode";
 import { formatBytes } from "@/utils/format";
 import WorldMap from "./WorldMap";
@@ -73,6 +73,12 @@ export function Dashboard() {
             </span>
           </div>
         </div>
+
+        {showMap && (
+          <div className="col-span-full">
+            <WorldMap />
+          </div>
+        )}
 
         {/* Traffic & Speed Card */}
         <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
@@ -150,10 +156,25 @@ export function Dashboard() {
           </div>
         </div>
 
+        {/* Disk Card */}
+        <div className="server-card p-5 flex flex-col justify-between relative overflow-hidden group">
+          <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
+            <HardDrive size={16} />
+          </div>
+          <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1">
+            {stats.totalDiskTotal > 0 ? ((stats.totalDiskUsed / stats.totalDiskTotal) * 100).toFixed(0) : 0}%
+          </div>
+          <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center justify-between">
+            <span>硬盘使用量</span>
+            <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)] shrink-0">
+              {formatBytes(stats.totalDiskUsed)} / {formatBytes(stats.totalDiskTotal)}
+            </span>
+          </div>
+        </div>
+
         <VisitorCard />
 
       </div>
-      {showMap && <WorldMap />}
     </div>
   );
 }

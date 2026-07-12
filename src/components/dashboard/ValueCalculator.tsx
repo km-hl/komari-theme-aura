@@ -37,7 +37,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
     expiredNodes;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={onClose}>
       <div 
         className="w-full max-w-3xl bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -55,14 +55,14 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-5 sm:space-y-6">
           
           {/* Tabs */}
-          <div className="flex gap-2 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl w-max">
+          <div className="flex gap-1.5 p-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl w-max">
             <button
               onClick={() => setView("residual")}
               className={clsx(
-                "px-5 py-2 text-[13px] font-bold rounded-lg transition-all",
+                "px-6 py-2.5 text-[11px] font-semibold rounded-lg transition-all",
                 view === "residual"
                   ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -73,7 +73,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             <button
               onClick={() => setView("cost")}
               className={clsx(
-                "px-5 py-2 text-[13px] font-bold rounded-lg transition-all",
+                "px-6 py-2.5 text-[11px] font-semibold rounded-lg transition-all",
                 view === "cost"
                   ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -103,13 +103,13 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 刷新汇率
               </button>
 
-              <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1.5 gap-1 shadow-sm">
+              <div className="flex flex-wrap items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1 gap-1 shadow-sm">
                 {TARGET_CURRENCIES.map(c => (
                   <button
                     key={c}
                     onClick={() => setTargetCurrency(c)}
                     className={clsx(
-                      "px-5 py-2 text-[13px] font-bold rounded-full transition-all whitespace-nowrap tracking-wide",
+                      "px-6 py-2.5 text-[11px] font-semibold rounded-full transition-all whitespace-nowrap tracking-wide",
                       targetCurrency === c 
                         ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
@@ -175,7 +175,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
                 className={clsx(
-                  "px-5 py-2.5 text-[13px] font-medium rounded-full transition-all flex items-center gap-2",
+                  "px-6 py-2.5 text-[11px] font-semibold rounded-full transition-all flex items-center gap-2",
                   filterType === tab.id 
                     ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm" 
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
@@ -222,10 +222,10 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
 
               return (
                 <div key={i} className={clsx(
-                  "flex flex-col p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]",
+                  "flex flex-col p-3 sm:p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]",
                   item.reason && "opacity-70"
                 )}>
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
                     <div className="font-medium text-[15px] text-[var(--text-primary)]">{item.node.name}</div>
                     
                     {!item.reason && (
