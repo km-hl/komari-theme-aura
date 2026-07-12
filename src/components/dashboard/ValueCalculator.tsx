@@ -58,7 +58,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-5 sm:space-y-6">
           
           {/* Tabs */}
-          <div className="flex gap-1.5 p-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl w-max">
+          <div className="flex gap-1.5 p-1 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-xl w-max shadow-sm">
             <button
               onClick={() => setView("residual")}
               className={clsx(
@@ -103,7 +103,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 刷新汇率
               </button>
 
-              <div className="flex flex-wrap items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full p-1 gap-1 shadow-sm">
+              <div className="flex flex-wrap items-center bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-full p-1 gap-1 shadow-sm">
                 {TARGET_CURRENCIES.map(c => (
                   <button
                     key={c}

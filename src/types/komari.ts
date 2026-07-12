@@ -192,6 +192,7 @@ export interface ThemeSettings {
   wallpaperUrl?: string;
   wallpaperData?: string;
   wallpaperOpacity?: number;
+  mapRegionColor?: string;
 }
 
 export const PublicConfigSchema = z

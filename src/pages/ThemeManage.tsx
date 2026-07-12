@@ -131,6 +131,7 @@ export function ThemeManage() {
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
+  const [draftMapRegionColor, setDraftMapRegionColor] = useState<string | undefined>();
   const [draftWallpaperMode, setDraftWallpaperMode] = useState<"none" | "custom_url" | "custom_upload" | "bing">("none");
   const [draftWallpaperUrl, setDraftWallpaperUrl] = useState("");
   const [draftWallpaperData, setDraftWallpaperData] = useState("");
@@ -172,6 +173,10 @@ export function ThemeManage() {
     () => (config?.theme_settings as any)?.priceTagColor as string | undefined,
     [config?.theme_settings],
   );
+  const sourceMapRegionColor = useMemo(
+    () => (config?.theme_settings as any)?.mapRegionColor as string | undefined,
+    [config?.theme_settings],
+  );
   const sourceWallpaperMode = useMemo(
     () => ((config?.theme_settings as any)?.wallpaperMode as "none" | "custom_url" | "custom_upload" | "bing") || "none",
     [config?.theme_settings],
@@ -197,12 +202,13 @@ export function ThemeManage() {
     if (!config) return;
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
+    setDraftMapRegionColor(sourceMapRegionColor);
     setDraftBindings(sourceBindings);
     setDraftWallpaperMode(sourceWallpaperMode);
     setDraftWallpaperUrl(sourceWallpaperUrl);
     setDraftWallpaperData(sourceWallpaperData);
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity]);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -250,6 +256,7 @@ export function ThemeManage() {
   const isDirty =
     draftAppearance !== sourceAppearance ||
     draftPriceTagColor !== sourcePriceTagColor ||
+    draftMapRegionColor !== sourceMapRegionColor ||
     draftWallpaperMode !== sourceWallpaperMode ||
     draftWallpaperUrl !== sourceWallpaperUrl ||
     draftWallpaperData !== sourceWallpaperData ||
@@ -257,8 +264,8 @@ export function ThemeManage() {
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
-    () => Object.values(draftBindings).reduce((total, clients) => total + clients.length, 0),
-    [draftBindings],
+    () => Object.values(draftBindings).reduce((total, clients) => total + clients.filter(uuid => clientsById.has(uuid)).length, 0),
+    [draftBindings, clientsById],
   );
 
   const handleSave = async () => {
@@ -275,6 +282,7 @@ export function ThemeManage() {
         ...baseSettings,
         defaultAppearance: draftAppearance,
         priceTagColor: draftPriceTagColor,
+        mapRegionColor: draftMapRegionColor,
         wallpaperMode: draftWallpaperMode,
         wallpaperUrl: draftWallpaperUrl,
         wallpaperData: draftWallpaperData,
@@ -301,6 +309,7 @@ export function ThemeManage() {
   const handleReset = () => {
     setDraftAppearance(sourceAppearance);
     setDraftPriceTagColor(sourcePriceTagColor);
+    setDraftMapRegionColor(sourceMapRegionColor);
     setDraftWallpaperMode(sourceWallpaperMode);
     setDraftWallpaperUrl(sourceWallpaperUrl);
     setDraftWallpaperData(sourceWallpaperData);
@@ -486,6 +495,30 @@ export function ThemeManage() {
         </div>
       </InstancePanel>
 
+      <InstancePanel title="地图点亮颜色" description="自定义首页地球仪上在线节点的点亮颜色。">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={draftMapRegionColor || "#a855f7"}
+              onChange={(e) => setDraftMapRegionColor(e.target.value)}
+              className="h-8 w-14 cursor-pointer rounded border-0 bg-transparent p-0"
+            />
+            <button
+              type="button"
+              onClick={() => setDraftMapRegionColor(undefined)}
+              className="theme-manage-button is-compact"
+              disabled={!draftMapRegionColor}
+            >
+              恢复默认
+            </button>
+          </div>
+          {draftMapRegionColor && (
+            <p className="text-[12px] text-[var(--text-secondary)]">当前颜色值: {draftMapRegionColor}</p>
+          )}
+        </div>
+      </InstancePanel>
+
       <InstancePanel
         title="壁纸设置"
         description="选择仪表盘的背景壁纸，支持自定义 URL 或上传本地图片（自动缩放压缩）。壁纸仅在打开毛玻璃特效时有最佳效果。"
@@ -561,7 +594,7 @@ export function ThemeManage() {
           {draftWallpaperMode !== "none" && (
             <div className="flex flex-col gap-2">
               <label className="text-[13px] text-[var(--text-secondary)] font-medium flex justify-between">
-                <span>壁纸透明度</span>
+                <span>壁纸不透明度</span>
                 <span>{draftWallpaperOpacity}%</span>
               </label>
               <input
@@ -643,7 +676,7 @@ export function ThemeManage() {
             !clientsLoading &&
             !noTasksYet &&
             filteredTasks.map((task) => {
-              const assigned = draftBindings[String(task.id)] ?? [];
+              const assigned = (draftBindings[String(task.id)] ?? []).filter(uuid => clientsById.has(uuid));
               const isExpanded = expandedTaskId === task.id;
               return (
                 <section key={task.id} className="surface-inset px-4 py-4">

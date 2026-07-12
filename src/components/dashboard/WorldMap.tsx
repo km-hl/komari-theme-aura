@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { useSyncExternalStore } from "react";
 import { subscribe, getSnapshot } from "@/services/wsStore";
 import { useVisibleNodeUuids } from "@/hooks/useNode";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
 import {
   ComposableMap,
   Geographies,
@@ -51,6 +52,8 @@ const countryCentroids: Record<string, [number, number]> = {
 export default function WorldMap() {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const { data: config } = usePublicConfig();
+  const customColor = (config?.theme_settings as any)?.mapRegionColor;
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: -10 });
   const [zoom, setZoom] = useState(1);
@@ -206,7 +209,7 @@ export default function WorldMap() {
     if (!code) return emptyColor;
     const data = regionStatusMap.get(code);
     if (!data) return emptyColor;
-    if (data.status === "online") return "var(--status-info)";
+    if (data.status === "online") return customColor || "var(--status-info)";
     if (data.status === "partial") return "var(--status-warning)";
     if (data.status === "offline") return "var(--status-error)";
     return emptyColor;
