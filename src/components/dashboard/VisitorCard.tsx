@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { ShieldCheck } from "lucide-react";
+import { Flag } from "@/components/ui/Flag";
 
 
 export function VisitorCard() {
   const [visitor, setVisitor] = useState<{
     ip: string;
     country: string;
+    countryCode: string;
     city: string;
     org: string;
   } | null>(null);
@@ -34,14 +37,20 @@ export function VisitorCard() {
 
 
     // Fetch IP info
-    fetch("https://get.geojs.io/v1/ip/geo.json")
+    fetch("https://get.geojs.io/v1/ip/geo.json", { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
+        let orgString = data.organization || data.organization_name || "Unknown ISP";
+        if (data.asn && !orgString.includes(String(data.asn))) {
+          orgString = `AS${data.asn} ${orgString}`;
+        }
+        
         setVisitor({
           ip: data.ip,
           country: data.country,
+          countryCode: data.country_code,
           city: data.city,
-          org: data.organization || data.organization_name || data.asn || "Unknown ISP",
+          org: orgString,
         });
       })
       .catch(console.error);
@@ -52,15 +61,26 @@ export function VisitorCard() {
       <div className="absolute top-4 right-4 text-[var(--text-tertiary)] opacity-30 group-hover:opacity-100 transition-opacity">
         <UserIcon className="w-4 h-4" />
       </div>
-      <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1 truncate" title={visitor ? [visitor.city, visitor.country].filter(Boolean).join(", ") : "Loading..."}>
-        {visitor ? visitor.country : "-"}
+      <div className="flex items-center gap-2 mb-1" title={visitor ? [visitor.city, visitor.country].filter(Boolean).join(", ") : "Loading..."}>
+        {visitor && visitor.countryCode && (
+          <Flag region={visitor.countryCode} className="w-8 h-auto shadow-sm rounded-[2px] shrink-0" />
+        )}
+        <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] truncate">
+          {visitor ? visitor.country : "-"}
+        </div>
       </div>
       <div className="text-[13px] text-[var(--text-secondary)] font-medium flex items-center justify-between">
         <span className="truncate">访客 · {visitor ? visitor.ip : "..."}</span>
-        <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)] shrink-0">
+        <span className="text-[10px] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded text-[var(--text-tertiary)] shrink-0 ml-2">
           {os === "Unknown OS" ? "N/A" : os} / {browser === "Unknown Browser" ? "N/A" : browser.split(" ")[0]}
         </span>
       </div>
+      {visitor && visitor.org && (
+        <div className="text-[12px] text-[var(--text-tertiary)] flex items-center gap-1.5 truncate mt-1.5">
+          <ShieldCheck size={12} className="shrink-0" />
+          <span className="truncate">{visitor.org}</span>
+        </div>
+      )}
     </div>
   );
 }
