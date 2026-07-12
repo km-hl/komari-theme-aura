@@ -271,9 +271,14 @@ export default function WorldMap() {
             if (coords && isVisible(coords, rotation)) {
               return (
                 <Marker key={`marker-${code}`} coordinates={coords}>
-                  <circle r={2.5} fill={getColorByCode(code)} stroke="var(--surface)" strokeWidth={0.5} />
-                  <foreignObject x="-25" y="-16" width="50" height="30" style={{ overflow: 'visible' }}>
-                    <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-full px-1.5 py-0.5 shadow-md w-max gap-1.5 absolute left-1/2 -translate-x-1/2 select-none pointer-events-none">
+                  <foreignObject x="-25" y="-14" width="50" height="28" style={{ overflow: 'visible' }}>
+                    <div 
+                      className="flex items-center bg-[var(--bg-card)] rounded-full px-1.5 py-0.5 w-max gap-1.5 absolute left-1/2 -translate-x-1/2 select-none pointer-events-none transition-colors"
+                      style={{
+                        border: `1px solid ${data.status === 'online' || data.status === 'partial' ? getColorByCode(code) : 'var(--border-subtle)'}`,
+                        boxShadow: data.status === 'online' || data.status === 'partial' ? `0 0 8px 0 color-mix(in srgb, ${getColorByCode(code)} 40%, transparent)` : 'var(--shadow-md)',
+                      }}
+                    >
                       <div className="w-3.5 h-3.5 flex items-center justify-center overflow-hidden rounded-sm">
                         <Flag region={code} size={14} />
                       </div>
