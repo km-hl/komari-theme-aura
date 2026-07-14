@@ -23,6 +23,19 @@ export function Dashboard() {
     return date.toLocaleTimeString("zh-CN", { hour12: false });
   };
 
+  const formatDate = (date: Date) => {
+    const day = new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+    const weekday = new Intl.DateTimeFormat("zh-CN", {
+      weekday: "short",
+    }).format(date);
+
+    return `${day} ${weekday}`;
+  };
+
   return (
     <div className="mb-6">
       <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">仪表盘</h2>
@@ -36,8 +49,13 @@ export function Dashboard() {
           <div className="text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-1 tabular-nums">
             {formatTime(time)}
           </div>
-          <div className="text-[13px] text-[var(--text-secondary)] font-medium">
-            当前时间
+          <div className="flex items-end justify-between gap-3">
+            <div className="text-[13px] text-[var(--text-secondary)] font-medium">
+              当前时间
+            </div>
+            <div className="text-right text-[11px] text-[var(--text-tertiary)] font-medium whitespace-nowrap">
+              {formatDate(time)}
+            </div>
           </div>
         </div>
 

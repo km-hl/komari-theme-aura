@@ -35,6 +35,12 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
     filterType === "valid" ? validNodes :
     filterType === "invalid" ? invalidNodes :
     expiredNodes;
+  const filterTitle = {
+    all: "全部节点",
+    valid: "可计算节点",
+    invalid: "未纳入计算",
+    expired: "已过期节点",
+  }[filterType];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={onClose}>
@@ -58,14 +64,12 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-5 sm:space-y-6">
           
           {/* Tabs */}
-          <div className="flex gap-1.5 p-1 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-xl w-max shadow-sm">
+          <div className="value-pill-group">
             <button
               onClick={() => setView("residual")}
               className={clsx(
-                "px-6 py-2.5 text-[11px] font-semibold rounded-lg transition-all",
-                view === "residual"
-                  ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                "value-pill-button",
+                view === "residual" && "is-active"
               )}
             >
               剩余价值
@@ -73,10 +77,8 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             <button
               onClick={() => setView("cost")}
               className={clsx(
-                "px-6 py-2.5 text-[11px] font-semibold rounded-lg transition-all",
-                view === "cost"
-                  ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                "value-pill-button",
+                view === "cost" && "is-active"
               )}
             >
               成本统计
@@ -94,25 +96,25 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             </div>
             
             <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <button 
-                onClick={triggerFetchRates} 
-                disabled={loadingRates}
-                className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                <RefreshCw size={14} className={clsx(loadingRates && "animate-spin")} />
-                刷新汇率
-              </button>
+              <div className="value-pill-group">
+                <button
+                  onClick={triggerFetchRates}
+                  disabled={loadingRates}
+                  className="value-pill-button value-refresh-pill"
+                >
+                  <RefreshCw size={14} className={clsx(loadingRates && "animate-spin")} />
+                  刷新汇率
+                </button>
+              </div>
 
-              <div className="flex flex-wrap items-center bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-full p-1 gap-1 shadow-sm">
+              <div className="value-pill-group">
                 {TARGET_CURRENCIES.map(c => (
                   <button
                     key={c}
                     onClick={() => setTargetCurrency(c)}
                     className={clsx(
-                      "px-6 py-2.5 text-[11px] font-semibold rounded-full transition-all whitespace-nowrap tracking-wide",
-                      targetCurrency === c 
-                        ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+                      "value-pill-button",
+                      targetCurrency === c && "is-active"
                     )}
                   >
                     {c}
@@ -164,7 +166,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
           )}
 
           {/* Filter Tabs */}
-          <div className="flex flex-wrap gap-2">
+          <div className="value-pill-group value-filter-group">
             {[
               { id: "all", label: "全部", count: totalCount },
               { id: "valid", label: "可计算", count: validNodes.length },
@@ -175,16 +177,14 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                 key={tab.id}
                 onClick={() => setFilterType(tab.id as any)}
                 className={clsx(
-                  "px-6 py-2.5 text-[12px] font-semibold rounded-full transition-all flex items-center gap-2 border",
-                  filterType === tab.id 
-                    ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-base)] shadow-md" 
-                    : "bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]"
+                  "value-pill-button value-filter-pill",
+                  filterType === tab.id && "is-active"
                 )}
               >
                 <span>{tab.label}</span>
                 <span className={clsx(
-                  "text-[12px] px-2 py-0.5 rounded-full font-bold",
-                  filterType === tab.id ? "bg-[color-mix(in_srgb,var(--bg-base)_20%,transparent)]" : "bg-[var(--border-subtle)] text-[var(--text-primary)]"
+                  "value-pill-count",
+                  filterType === tab.id && "is-active"
                 )}>
                   {tab.count}
                 </span>
@@ -192,7 +192,9 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
             ))}
           </div>
 
-          <h3 className="text-[15px] font-bold text-[var(--text-primary)]">可计算节点</h3>
+          <h3 className="text-[15px] font-bold text-[var(--text-primary)]">
+            {filterTitle}
+          </h3>
 
           {/* List */}
           <div className="space-y-3">
@@ -222,7 +224,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
 
               return (
                 <div key={i} className={clsx(
-                  "flex flex-col p-3 sm:p-5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl transition-colors hover:border-[var(--color-primary)]",
+                  "value-node-card flex flex-col p-3 sm:p-5",
                   item.reason && "opacity-70"
                 )}>
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
