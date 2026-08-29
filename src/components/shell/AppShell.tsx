@@ -2,12 +2,13 @@ import { Outlet } from "react-router-dom";
 import { FloatingControls } from "./FloatingControls";
 import { useAppearance } from "@/hooks/useAppearance";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
+import { cssUrl, normalizeImageUrl } from "@/utils/imageUrl";
 
 export function AppShell() {
   useAppearance();
   const { data: config } = usePublicConfig();
   const ts = config?.theme_settings as any;
-  const wallpaperUrl = ts?.wallpaperMode === 'custom_url' ? ts?.wallpaperUrl 
+  const wallpaperUrl = ts?.wallpaperMode === 'custom_url' ? normalizeImageUrl(ts?.wallpaperUrl)
     : ts?.wallpaperMode === 'custom_upload' ? ts?.wallpaperData 
     : ts?.wallpaperMode === 'bing' ? 'https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN'
     : null;
@@ -22,7 +23,7 @@ export function AppShell() {
       {wallpaperUrl && (
         <div 
           className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-          style={{ backgroundImage: `url(${wallpaperUrl})`, opacity: wallpaperOpacity }}
+          style={{ backgroundImage: cssUrl(wallpaperUrl), opacity: wallpaperOpacity }}
         />
       )}
       <FloatingControls />

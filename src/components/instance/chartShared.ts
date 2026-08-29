@@ -48,7 +48,7 @@ function buildHistoryRangeOptions(
 }
 
 export function buildLoadTimeRangeOptions(maxHours: number | null | undefined) {
-  return buildHistoryRangeOptions(LOAD_TIME_RANGE_OPTIONS, maxHours, true);
+  return buildHistoryRangeOptions(LOAD_TIME_RANGE_OPTIONS, maxHours, false);
 }
 
 const GRID_CHART_DEFAULT = { w: 420, h: 150 };

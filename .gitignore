@@ -2,6 +2,7 @@ node_modules/
 dist/
 
 *.log
+*.pid
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -25,3 +26,6 @@ coverage/
 api.md
 theme.md
 HANDOFF.md
+AGENTS.md
+CLAUDE.md
+docs/superpowers/

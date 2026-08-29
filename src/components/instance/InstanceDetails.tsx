@@ -1,7 +1,40 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useNode } from "@/hooks/useNode";
-import { formatBytes, formatUptimeDays } from "@/utils/format";
+import { Flag } from "@/components/ui/Flag";
+import { getExpireTextColor } from "@/utils/expireStatus";
+import { formatBytes, formatExpireDays, formatUptimeDays } from "@/utils/format";
+import { getTrafficLimitUsage } from "@/utils/trafficLimit";
 import { InstancePanel } from "./InstancePanel";
+
+function formatBillingCycle(cycle: string | null | undefined) {
+  if (!cycle) return "周期";
+  const value = String(cycle);
+  const labels: Record<string, string> = {
+    "1": "天",
+    "30": "月",
+    "90": "季",
+    "180": "半年",
+    "365": "年",
+    "730": "2 年",
+    "1095": "3 年",
+  };
+  return labels[value] ?? `${value} 天`;
+}
+
+function formatPrice({
+  price,
+  currency,
+  billingCycle,
+}: {
+  price: number;
+  currency: string;
+  billingCycle?: string | null;
+}) {
+  if (!Number.isFinite(price) || price <= 0) return "—";
+  const symbol = currency === "USD" ? "$" : currency === "CNY" ? "¥" : currency || "";
+  const gap = symbol && /^[A-Z]{3}$/.test(symbol) ? " " : "";
+  return `${symbol}${gap}${price.toFixed(price % 1 === 0 ? 0 : 2)} / ${formatBillingCycle(billingCycle)}`;
+}
 
 export function InstanceDetails({
   uuid,
@@ -27,11 +60,14 @@ export function InstanceDetails({
 
   const isOnline = node.online;
   const uptime = formatUptimeDays(node.uptime);
-  const trafficUsed = node.trafficUp + node.trafficDown;
-  const trafficFraction =
-    node.traffic_limit > 0
-      ? Math.max(0, Math.min(1, trafficUsed / node.traffic_limit))
-      : 0;
+  const expire = formatExpireDays(node.expired_at);
+  const expireText = `${expire.value}${expire.unit ? ` ${expire.unit}` : ""}`;
+  const trafficLimit = getTrafficLimitUsage({
+    up: node.trafficUp,
+    down: node.trafficDown,
+    limit: node.traffic_limit,
+    type: node.traffic_limit_type,
+  });
   const lastUpdated =
     node.updatedAt > 0
       ? new Intl.DateTimeFormat("zh-CN", {
@@ -48,6 +84,17 @@ export function InstanceDetails({
         isOnline ? undefined : "节点当前离线，以下展示最近一次上报的缓存数据。"
       }
     >
+      <header className="instance-hero-header is-inside-panel">
+        <div className="instance-hero-title-block">
+          <div className="instance-hero-title-row">
+            <Flag region={node.region} size={26} />
+            <h1 className="instance-hero-title">{node.name}</h1>
+          </div>
+          <p className="instance-hero-subtitle">
+            {[node.os, node.arch, node.virtualization].filter(Boolean).join(" · ") || "—"}
+          </p>
+        </div>
+      </header>
       <div className="instance-info-groups">
         <div className="instance-info-group">
           <div className="instance-info-group-title">系统</div>
@@ -95,21 +142,51 @@ export function InstanceDetails({
             <span className="instance-info-label">总流量</span>
             <div className="instance-info-traffic">
               <span className="instance-info-value">{`↑ ${formatBytes(node.trafficUp)} · ↓ ${formatBytes(node.trafficDown)}`}</span>
-              {node.traffic_limit > 0 && (
+              {trafficLimit && (
                 <>
                   <div className="instance-progress-track" aria-hidden>
                     <span
                       className="instance-progress-fill"
-                      style={{ width: `${trafficFraction * 100}%` }}
+                      style={{ width: `${trafficLimit.fraction * 100}%` }}
                     />
                   </div>
                   <span className="instance-info-note">
-                    {`${formatBytes(trafficUsed)} / ${formatBytes(node.traffic_limit)}`}
+                    {trafficLimit.summary}
                   </span>
                 </>
               )}
             </div>
           </div>
+        </div>
+
+        <div className="instance-info-group">
+          <div className="instance-info-group-title">服务</div>
+          <InfoRow
+            label="地区"
+            value={
+              <span className="instance-service-region" title={node.region || undefined}>
+                <Flag region={node.region} size={16} />
+                {!node.region ? <span>—</span> : null}
+              </span>
+            }
+          />
+          <InfoRow
+            label="到期"
+            value={
+              <span className="instance-service-expire" style={{ color: getExpireTextColor(node.expired_at) }}>
+                {expireText}
+                {node.auto_renewal ? <span className="instance-service-renewal">自动续费</span> : null}
+              </span>
+            }
+          />
+          <InfoRow
+            label="价格"
+            value={formatPrice({
+              price: node.price,
+              currency: node.currency,
+              billingCycle: node.billing_cycle,
+            })}
+          />
         </div>
       </div>
     </InstancePanel>
@@ -121,7 +198,7 @@ function InfoRow({
   value,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
 }) {
   return (
     <div className="instance-info-item">

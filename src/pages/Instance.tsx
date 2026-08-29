@@ -13,7 +13,7 @@ export function Instance() {
   const { uuid } = useParams<{ uuid: string }>();
   const { data: config } = usePublicConfig();
   const [chartType, setChartType] = useState<"load" | "ping">("load");
-  const [chartHours, setChartHours] = useState(0);
+  const [chartHours, setChartHours] = useState(1);
   const chartControlsRef = useRef<HTMLDivElement | null>(null);
 
   const loadRanges = useMemo(
@@ -38,7 +38,7 @@ export function Instance() {
 
   useEffect(() => {
     if (!loadRanges.some((range) => range.value === chartHours)) {
-      setChartHours(loadRanges[0]?.value ?? 0);
+      setChartHours(loadRanges[0]?.value ?? 1);
     }
   }, [chartHours, loadRanges]);
 

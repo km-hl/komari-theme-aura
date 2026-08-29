@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import UplotReact from "uplot-react";
-import type uPlot from "uplot";
+import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { usePingRecords } from "@/hooks/useRecords";
@@ -65,7 +65,7 @@ export function PingChart({
   const { resolvedAppearance } = usePreferences();
   const { w, h } = useResponsiveChartSize("wide");
   const [hiddenTasks, setHiddenTasks] = useState<Set<number>>(new Set());
-  const [connectNulls, setConnectNulls] = useState(false);
+  const [connectNulls, setConnectNulls] = useState(true);
   const [cutPeak, setCutPeak] = useState(false);
   const chartRef = useRef<uPlot.AlignedData>([[]]);
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -95,8 +95,6 @@ export function PingChart({
     () => new Map(tasks.map((task, index) => [task.id, colorForTask(index)] as const)),
     [tasks],
   );
-  const taskKeySet = useMemo(() => new Set(tasks.map((task) => String(task.id))), [tasks]);
-  const taskKeys = useMemo(() => tasks.map((task) => String(task.id)), [tasks]);
   const taskIndexById = useMemo(
     () => new Map(tasks.map((task, index) => [task.id, index] as const)),
     [tasks],
@@ -124,60 +122,45 @@ export function PingChart({
 
   const chart = useMemo(() => {
     if (!data?.records.length || !tasks.length || visibleTasks.length === 0) return null;
-    const pointMap = new Map<number, TimedMetricPoint>();
-    const sortedRecords = data.records
-      .map((record) => ({
-        record,
-        time: toChartSeconds(record.time),
-      }))
-      .filter(({ time }) => time > 0)
-      .sort((left, right) => left.time - right.time);
-    const taskIntervals = tasks
-      .map((task) => task.interval)
-      .filter((value): value is number => typeof value === "number" && value > 0);
-    const fallbackInterval = taskIntervals.length > 0
-      ? Math.min(...taskIntervals)
-      : detectTypicalIntervalMs(sortedRecords.map(({ time }) => time), 60);
-    const tolerance = Math.min(6, Math.max(0.8, fallbackInterval * 0.25));
-    const anchors: number[] = [];
+    const recordsByTask = new Map<number, Array<{ time: number; value: number }>>();
 
-    for (const { record, time } of sortedRecords) {
-      if (!taskKeySet.has(String(record.task_id))) continue;
-      let anchor = time;
-      for (const existing of anchors) {
-        if (Math.abs(existing - time) <= tolerance) {
-          anchor = existing;
-          break;
-        }
-      }
-      if (anchor === time) {
-        anchors.push(anchor);
-      }
-      const current = pointMap.get(anchor) ?? { time: anchor };
-      current[String(record.task_id)] = record.value > 0 ? record.value : null;
-      pointMap.set(anchor, current);
+    for (const record of data.records) {
+      const time = toChartSeconds(record.time);
+      if (time <= 0) continue;
+      const records = recordsByTask.get(record.task_id);
+      const point = { time, value: record.value };
+      if (records) records.push(point);
+      else recordsByTask.set(record.task_id, [point]);
     }
 
-    let chartPoints = [...pointMap.values()].sort((a, b) => a.time - b.time);
-    if (cutPeak && taskKeys.length > 0) {
-      chartPoints = cutPeakValues(chartPoints, taskKeys);
-    }
-    chartPoints = insertMetricGapSentinels(chartPoints, {
-      intervals: new Map(
-        tasks
-          .filter((task) => typeof task.interval === "number" && task.interval > 0)
-          .map((task) => [String(task.id), task.interval] as const),
-      ),
-      defaultInterval: fallbackInterval,
-      matchToleranceRatio: 0.25,
+    const taskTables = tasks.map((task) => {
+      const records = (recordsByTask.get(task.id) ?? []).sort((left, right) => left.time - right.time);
+      const detectedInterval = detectTypicalIntervalMs(records.map((record) => record.time), 60);
+      const interval = task.interval > 0 ? task.interval : detectedInterval;
+      let points: TimedMetricPoint[] = records.map((record) => ({
+        time: record.time,
+        value: record.value > 0 ? record.value : null,
+      }));
+
+      points = insertMetricGapSentinels(points, {
+        intervals: new Map([["value", interval]]),
+        defaultInterval: detectedInterval,
+        matchToleranceRatio: 0.25,
+      });
+      if (cutPeak) {
+        points = cutPeakValues(points, ["value"]);
+      }
+
+      return [
+        points.map((point) => point.time),
+        points.map((point) => point.value),
+      ] as uPlot.AlignedData;
     });
-    const times = chartPoints.map((point) => point.time);
-    const perTask = taskKeys.map((taskKey) =>
-      chartPoints.map((point) => point[taskKey] ?? null),
-    );
 
-    return [times, ...perTask] as uPlot.AlignedData;
-  }, [cutPeak, data, taskKeySet, taskKeys, tasks, visibleTasks.length]);
+    // uPlot.join keeps explicit nulls (real loss/gaps) while representing
+    // timestamps owned by another task as undefined alignment artifacts.
+    return uPlot.join(taskTables);
+  }, [cutPeak, data, tasks, visibleTasks.length]);
 
   useEffect(() => {
     if (chart) chartRef.current = chart;

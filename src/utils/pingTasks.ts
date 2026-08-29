@@ -1,4 +1,5 @@
 export type HomepagePingTaskBindings = Record<string, string[]>;
+export const MAX_HOMEPAGE_PING_TASKS = 3;
 
 export function normalizeHomepagePingTaskBindings(
   value: unknown,
@@ -56,4 +57,54 @@ export function invertHomepagePingTaskBindings(
   }
 
   return selectedTaskByClient;
+}
+
+export function countHomepagePingAssignmentsForClient(
+  bindings: HomepagePingTaskBindings,
+  clientUuid: string,
+) {
+  let count = 0;
+  for (const clients of Object.values(bindings)) {
+    if (clients.includes(clientUuid)) count += 1;
+  }
+  return count;
+}
+
+export function getHomepagePingTaskIdsForClient(
+  bindings: HomepagePingTaskBindings,
+  clientUuid: string,
+): number[] {
+  return Object.entries(normalizeHomepagePingTaskBindings(bindings))
+    .sort(([left], [right]) => Number(left) - Number(right))
+    .filter(([, clients]) => clients.includes(clientUuid))
+    .map(([taskId]) => Number(taskId))
+    .filter((taskId) => Number.isInteger(taskId) && taskId > 0)
+    .slice(0, MAX_HOMEPAGE_PING_TASKS);
+}
+
+export function normalizeHomepagePingTaskIds(
+  value: unknown,
+  fallbackBindings?: unknown,
+): number[] {
+  const selected = new Set<number>();
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const taskId = typeof item === "number" ? item : Number(item);
+      if (Number.isInteger(taskId) && taskId > 0) {
+        selected.add(taskId);
+      }
+      if (selected.size >= MAX_HOMEPAGE_PING_TASKS) break;
+    }
+  }
+
+  if (selected.size === 0) {
+    const bindings = normalizeHomepagePingTaskBindings(fallbackBindings);
+    for (const taskId of Object.keys(bindings).sort((left, right) => Number(left) - Number(right))) {
+      selected.add(Number(taskId));
+      if (selected.size >= MAX_HOMEPAGE_PING_TASKS) break;
+    }
+  }
+
+  return Array.from(selected).slice(0, MAX_HOMEPAGE_PING_TASKS);
 }

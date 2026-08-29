@@ -186,6 +186,7 @@ export interface ThemeSettings {
   showNetworkSpeed?: boolean;
   showTraffic?: boolean;
   offlineNodesBehind?: boolean;
+  homepagePingTaskIds?: number[];
   homepagePingBindings?: Record<string, string[]>;
   siteTitle?: string;
   wallpaperMode?: "none" | "custom_url" | "custom_upload" | "bing";

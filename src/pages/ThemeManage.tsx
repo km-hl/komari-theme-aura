@@ -15,6 +15,7 @@ import { clsx } from "clsx";
 import { InstancePanel } from "@/components/instance/InstancePanel";
 import { Spinner } from "@/components/ui/Spinner";
 import { Flag } from "@/components/ui/Flag";
+import { useAuth } from "@/hooks/useAuth";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { queryClient } from "@/services/queryClient";
 import {
@@ -30,9 +31,12 @@ export interface ThemeSettings extends BaseThemeSettings {
 }
 
 import {
+  MAX_HOMEPAGE_PING_TASKS,
+  countHomepagePingAssignmentsForClient,
   normalizeHomepagePingTaskBindings,
   type HomepagePingTaskBindings,
 } from "@/utils/pingTasks";
+import { normalizeImageUrl } from "@/utils/imageUrl";
 
 type Appearance = "system" | "light" | "dark";
 
@@ -42,22 +46,10 @@ const APPEARANCE_OPTIONS = [
   { value: "dark", label: "深色", icon: Moon },
 ] as const;
 
+const THEME_COLOR_OPTIONS = ["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"];
+
 function normalizeAppearance(value: unknown): Appearance {
   return value === "light" || value === "dark" || value === "system" ? value : "system";
-}
-
-function serializeBindings(bindings: HomepagePingTaskBindings) {
-  return JSON.stringify(
-    Object.entries(bindings)
-      .map(
-        ([taskId, clients]): [number, string[]] => [
-          Number(taskId),
-          [...clients].sort((left, right) => left.localeCompare(right)),
-        ],
-      )
-      .filter(([taskId]) => Number.isInteger(taskId) && taskId > 0)
-      .sort(([left], [right]) => Number(left) - Number(right)),
-  );
 }
 
 function sortTasks(tasks: PingTask[]) {
@@ -73,6 +65,20 @@ function sortClients(clients: AdminClient[]) {
     if (left.weight !== right.weight) return left.weight - right.weight;
     return left.name.localeCompare(right.name);
   });
+}
+
+function serializeBindings(bindings: HomepagePingTaskBindings) {
+  return JSON.stringify(
+    Object.entries(bindings)
+      .map(
+        ([taskId, clients]): [number, string[]] => [
+          Number(taskId),
+          [...clients].sort((left, right) => left.localeCompare(right)),
+        ],
+      )
+      .filter(([taskId]) => Number.isInteger(taskId) && taskId > 0)
+      .sort(([left], [right]) => left - right),
+  );
 }
 
 function summarizeNodes(
@@ -106,27 +112,33 @@ function applyClientAssignment(
 ) {
   const taskKey = String(taskId);
   const next = pruneBindings(bindings);
+  const selected = next[taskKey] ?? [];
 
-  for (const [currentTaskId, clients] of Object.entries(next)) {
-    const filtered = clients.filter((uuid) => uuid !== clientUuid);
-    if (filtered.length > 0) {
-      next[currentTaskId] = filtered;
-    } else {
-      delete next[currentTaskId];
-    }
+  if (!checked) {
+    const filtered = selected.filter((uuid) => uuid !== clientUuid);
+    if (filtered.length > 0) next[taskKey] = filtered;
+    else delete next[taskKey];
+    return pruneBindings(next);
   }
 
-  if (checked) {
-    const selected = next[taskKey] ?? [];
-    next[taskKey] = Array.from(new Set([...selected, clientUuid])).sort((left, right) =>
-      left.localeCompare(right),
-    );
+  if (selected.includes(clientUuid)) return next;
+  if (countHomepagePingAssignmentsForClient(next, clientUuid) >= MAX_HOMEPAGE_PING_TASKS) {
+    return next;
   }
 
-  return next;
+  next[taskKey] = Array.from(new Set([...selected, clientUuid])).sort((left, right) =>
+    left.localeCompare(right),
+  );
+  return pruneBindings(next);
 }
 
 export function ThemeManage() {
+  const {
+    data: me,
+    isPending: authPending,
+    isFetching: authFetching,
+    error: authError,
+  } = useAuth();
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
@@ -251,6 +263,10 @@ export function ThemeManage() {
     });
   }, [nodeSearch, sortedClients]);
 
+  const normalizedDraftWallpaperUrl = useMemo(
+    () => normalizeImageUrl(draftWallpaperUrl),
+    [draftWallpaperUrl],
+  );
   const draftBindingsSerialized = useMemo(
     () => serializeBindings(draftBindings),
     [draftBindings],
@@ -271,7 +287,10 @@ export function ThemeManage() {
     draftBindingsSerialized !== sourceBindingsSerialized;
 
   const assignedNodeCount = useMemo(
-    () => Object.values(draftBindings).reduce((total, clients) => total + clients.filter(uuid => clientsById.has(uuid)).length, 0),
+    () => Object.values(draftBindings).reduce(
+      (total, clients) => total + clients.filter((uuid) => clientsById.has(uuid)).length,
+      0,
+    ),
     [draftBindings, clientsById],
   );
 
@@ -285,13 +304,14 @@ export function ThemeManage() {
         ...(config.theme_settings ?? {}),
       };
       delete (baseSettings as any).homepagePingTask;
+      delete (baseSettings as any).homepagePingTaskIds;
       const nextSettings = {
         ...baseSettings,
         defaultAppearance: draftAppearance,
         priceTagColor: draftPriceTagColor,
         mapRegionColor: draftMapRegionColor,
         wallpaperMode: draftWallpaperMode,
-        wallpaperUrl: draftWallpaperUrl,
+        wallpaperUrl: normalizedDraftWallpaperUrl,
         wallpaperData: draftWallpaperData,
         wallpaperOpacity: draftWallpaperOpacity,
         cardOpacity: draftCardOpacity,
@@ -322,12 +342,13 @@ export function ThemeManage() {
     setDraftWallpaperUrl(sourceWallpaperUrl);
     setDraftWallpaperData(sourceWallpaperData);
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
+    setDraftCardOpacity(sourceCardOpacity);
     setDraftBindings(sourceBindings);
     setMessage(null);
     setError(null);
   };
 
-  if (configLoading) {
+  if (authPending || (!me && authFetching) || configLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Spinner size={24} />
@@ -336,6 +357,10 @@ export function ThemeManage() {
   }
 
   if (accessRevoked) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (authError || !me?.logged_in) {
     return <Navigate to="/" replace />;
   }
 
@@ -418,7 +443,7 @@ export function ThemeManage() {
         aside={
           <div className="text-right text-[11px] text-[var(--text-tertiary)]">
             <div>主题: {config?.theme || "Aura"}</div>
-            <div>已绑定首页 Ping 节点 {assignedNodeCount} / {sortedClients.length}</div>
+            <div>首页 Ping 绑定 {assignedNodeCount} / {sortedClients.length}</div>
           </div>
         }
       >
@@ -472,7 +497,7 @@ export function ThemeManage() {
         <div className="surface-inset px-4 py-4 flex items-center justify-between">
           <div className="text-[13px] text-[var(--text-primary)]">计费标签颜色</div>
           <div className="flex items-center gap-2">
-             {["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"].map(color => (
+             {THEME_COLOR_OPTIONS.map(color => (
                <button
                  key={color}
                  type="button"
@@ -482,6 +507,7 @@ export function ThemeManage() {
                    draftPriceTagColor === color ? "border-[var(--text-primary)] scale-110" : "border-transparent hover:scale-110"
                  )}
                  style={{ background: color }}
+                 title={color}
                />
              ))}
              <input 
@@ -494,7 +520,7 @@ export function ThemeManage() {
                <button 
                  type="button"
                  onClick={() => setDraftPriceTagColor(undefined)} 
-                 className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors ml-2"
+                 className="theme-manage-reset-chip ml-1"
                >
                  恢复默认
                </button>
@@ -503,38 +529,44 @@ export function ThemeManage() {
         </div>
       </InstancePanel>
 
-      <InstancePanel title="地图点亮颜色" description="自定义首页地球仪上在线节点的点亮颜色。">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-[13px] text-[var(--text-secondary)]">
-          <div className="flex items-center gap-2 min-w-[100px]">
-            地图点亮颜色
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-            {["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"].map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setDraftMapRegionColor(color)}
-                className="w-6 h-6 rounded-full cursor-pointer transition-all outline-none"
-                style={{
-                  backgroundColor: color,
-                  transform: draftMapRegionColor === color ? "scale(1.2)" : "scale(1)",
-                  boxShadow: draftMapRegionColor === color ? `0 0 0 2px var(--bg-base), 0 0 0 4px ${color}` : "none",
-                }}
-                title={color}
-              />
-            ))}
-            <div className="w-px h-6 bg-[var(--border)] mx-1" />
-            <button
-              type="button"
-              onClick={() => setDraftMapRegionColor(undefined)}
-              className="text-[12px] px-3 py-1 rounded-full border border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] transition-colors"
-              style={{
-                borderColor: !draftMapRegionColor ? "var(--text-primary)" : "var(--border)",
-                color: !draftMapRegionColor ? "var(--text-primary)" : "inherit",
-              }}
-            >
-              默认
-            </button>
+      <InstancePanel
+        title="地图点亮颜色"
+        description="自定义首页地球仪上在线节点的点亮颜色。"
+        aside={
+          <div className="w-5 h-5 rounded-md" style={{ background: draftMapRegionColor || "var(--status-info)" }} />
+        }
+      >
+        <div className="surface-inset px-4 py-4 flex items-center justify-between">
+          <div className="text-[13px] text-[var(--text-primary)]">地图点亮颜色</div>
+          <div className="flex items-center gap-2">
+             {THEME_COLOR_OPTIONS.map(color => (
+               <button
+                 key={color}
+                 type="button"
+                 onClick={() => setDraftMapRegionColor(color)}
+                 className={clsx(
+                   "w-6 h-6 rounded-full border-2 transition-transform",
+                   draftMapRegionColor === color ? "border-[var(--text-primary)] scale-110" : "border-transparent hover:scale-110"
+                 )}
+                 style={{ background: color }}
+                 title={color}
+               />
+             ))}
+             <input
+               type="color"
+               value={draftMapRegionColor || "#3b82f6"}
+               onChange={e => setDraftMapRegionColor(e.target.value)}
+               className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full ml-1"
+             />
+             {draftMapRegionColor && (
+               <button
+                 type="button"
+                 onClick={() => setDraftMapRegionColor(undefined)}
+                 className="theme-manage-reset-chip ml-1"
+               >
+                 恢复默认
+               </button>
+             )}
           </div>
         </div>
       </InstancePanel>
@@ -587,7 +619,7 @@ export function ThemeManage() {
               />
               {draftWallpaperUrl && (
                 <div className="mt-2 rounded-xl overflow-hidden border border-[var(--border-subtle)] h-32 bg-black/20 flex items-center justify-center">
-                   <img src={draftWallpaperUrl} alt="Wallpaper Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                   <img src={normalizedDraftWallpaperUrl} alt="Wallpaper Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
                 </div>
               )}
             </div>
@@ -651,7 +683,7 @@ export function ThemeManage() {
         title="主页延迟检测"
         description={
           <>
-            为首页延迟卡片指定对应的 Ping 任务与展示节点。每个节点只能归属一个任务；未分配的节点不会显示延迟。
+            为首页延迟卡片指定对应的 Ping 任务与展示节点；每个节点最多可以绑定 3 个任务，并在首页卡片里显示成多行。
             {" "}
             如果当前还没有可用任务，请先前往
             {" "}
@@ -664,7 +696,7 @@ export function ThemeManage() {
         }
         aside={
           <div className="text-[11px] text-[var(--text-tertiary)]">
-            {tasksLoading || clientsLoading ? "载入中" : `${sortedTasks.length} 个任务`}
+            {tasksLoading || clientsLoading ? "载入中" : `${assignedNodeCount} 个绑定`}
           </div>
         }
       >
@@ -712,11 +744,11 @@ export function ThemeManage() {
             !clientsLoading &&
             !noTasksYet &&
             filteredTasks.map((task) => {
-              const assigned = (draftBindings[String(task.id)] ?? []).filter(uuid => clientsById.has(uuid));
+              const assigned = (draftBindings[String(task.id)] ?? []).filter((uuid) => clientsById.has(uuid));
               const isExpanded = expandedTaskId === task.id;
               return (
                 <section key={task.id} className="surface-inset px-4 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3 text-left">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
@@ -733,10 +765,6 @@ export function ThemeManage() {
                         </span>
                       </div>
                       <div className="mt-2 text-[12px] text-[var(--text-secondary)]">
-                        <span className="font-medium text-[var(--text-primary)]">
-                          已绑定 {assigned.length} 个节点
-                        </span>
-                        <span className="mx-2 text-[var(--text-tertiary)]">·</span>
                         <span title={task.target || ""}>{task.target || "未填写目标"}</span>
                       </div>
                       <p
@@ -791,6 +819,8 @@ export function ThemeManage() {
                       <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                         {visibleClients.map((client) => {
                           const checked = assigned.includes(client.uuid);
+                          const clientAssignmentCount = countHomepagePingAssignmentsForClient(draftBindings, client.uuid);
+                          const disabledByLimit = !checked && clientAssignmentCount >= MAX_HOMEPAGE_PING_TASKS;
                           const subtitle = [client.group, client.uuid].filter(Boolean).join(" · ");
                           return (
                             <label
@@ -799,16 +829,18 @@ export function ThemeManage() {
                                 "flex cursor-pointer items-start gap-3 rounded-[12px] border px-3 py-3 transition-colors",
                                 checked
                                   ? "border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--hover-bg)_72%,transparent)]"
-                                  : "border-[var(--hairline)] bg-transparent hover:bg-[var(--hover-bg)]",
+                                  : disabledByLimit
+                                    ? "cursor-not-allowed border-[var(--hairline)] bg-transparent opacity-50"
+                                    : "border-[var(--hairline)] bg-transparent hover:bg-[var(--hover-bg)]",
                               )}
                             >
                               <input
                                 type="checkbox"
                                 checked={checked}
+                                disabled={disabledByLimit}
                                 onChange={(event) => {
-                                  const nextChecked = event.target.checked;
                                   setDraftBindings((prev) =>
-                                    applyClientAssignment(prev, task.id, client.uuid, nextChecked),
+                                    applyClientAssignment(prev, task.id, client.uuid, event.target.checked),
                                   );
                                 }}
                                 className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-500)]"

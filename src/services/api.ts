@@ -38,7 +38,9 @@ const RpcRecordsSchema = z
   .passthrough();
 
 const LOAD_RECORDS_PER_HOUR = 12;
-const PING_RECORDS_PER_HOUR = 240;
+// Ping records are returned for every task assigned to the node. Reserve enough
+// room for up to 20 one-minute tasks before RPC2 needs to downsample the range.
+const PING_RECORDS_PER_HOUR = 1_200;
 const MAX_RPC_RECORDS = 20_000;
 const OVERVIEW_PING_MAX_COUNT = 4_000;
 
