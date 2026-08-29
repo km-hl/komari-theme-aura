@@ -418,12 +418,15 @@ export function LoadChart({
   const queryHours = hours === 0 ? 1 : hours;
   const { data, isLoading } = useLoadRecords(uuid, queryHours, active);
   const isRealtime = hours === 0;
-  const node = useNode(uuid, isRealtime && active);
+  const node = useNode(uuid, active);
   const { resolvedAppearance } = usePreferences();
   const containerRef = useRef<HTMLDivElement>(null);
   const { w, h } = useResponsiveChartSize("grid", containerRef);
   const [realtimePoints, setRealtimePoints] = useState<ChartPoint[]>([]);
   const [connectNulls, setConnectNulls] = useState(false);
+  const fallbackRamTotal = node?.ramTotal ?? 0;
+  const fallbackSwapTotal = node?.swapTotal ?? 0;
+  const fallbackDiskTotal = node?.diskTotal ?? 0;
 
   useEffect(() => {
     if (!active || !isRealtime || !node) return;
@@ -442,26 +445,34 @@ export function LoadChart({
   const historyPoints = useMemo<ChartPoint[]>(() => {
     const records = [...(data?.records ?? [])];
     const rawPoints = records
-      .map((record) => ({
-        time: toChartSeconds(record.time),
-        cpu: record.cpu,
-        ram: record.ram_total > 0 ? (record.ram / record.ram_total) * 100 : 0,
-        swap: record.swap_total > 0 ? (record.swap / record.swap_total) * 100 : 0,
-        disk: record.disk_total > 0 ? (record.disk / record.disk_total) * 100 : 0,
-        diskBytes: record.disk,
-        netIn: record.net_in,
-        netOut: record.net_out,
-        connections: record.connections,
-        udp: record.connections_udp,
-        process: record.process,
-        load: record.load,
-      }))
+      .map((record) => {
+        // RPC2 history currently returns used bytes but may zero the capacity
+        // fields. Fall back to the live node capacities so RAM/disk percentages
+        // remain meaningful across every historical range.
+        const ramTotal = record.ram_total > 0 ? record.ram_total : fallbackRamTotal;
+        const swapTotal = record.swap_total > 0 ? record.swap_total : fallbackSwapTotal;
+        const diskTotal = record.disk_total > 0 ? record.disk_total : fallbackDiskTotal;
+        return {
+          time: toChartSeconds(record.time),
+          cpu: record.cpu,
+          ram: ramTotal > 0 ? (record.ram / ramTotal) * 100 : null,
+          swap: swapTotal > 0 ? (record.swap / swapTotal) * 100 : null,
+          disk: diskTotal > 0 ? (record.disk / diskTotal) * 100 : null,
+          diskBytes: record.disk,
+          netIn: record.net_in,
+          netOut: record.net_out,
+          connections: record.connections,
+          udp: record.connections_udp,
+          process: record.process,
+          load: record.load,
+        };
+      })
       .filter((point) => point.time > 0)
       .sort((a, b) => a.time - b.time);
     const sampled = downsamplePoints(rawPoints, getHistoryRenderLimit(hours));
     const filled = fillMissingMetricPoints(sampled);
     return interpolateMetricGaps(filled, LOAD_INTERPOLATE_KEYS);
-  }, [data, hours]);
+  }, [data, fallbackDiskTotal, fallbackRamTotal, fallbackSwapTotal, hours]);
 
   const points = useMemo<ChartPoint[]>(() => {
     if (isRealtime) {
@@ -560,7 +571,7 @@ export function LoadChart({
             isRealtime && node
               ? `${formatBytes(node.ramUsed)} / ${formatBytes(node.ramTotal)}`
               : data?.records.length
-                ? `${formatBytes(data.records[data.records.length - 1]?.ram ?? 0)} / ${formatBytes(data.records[data.records.length - 1]?.ram_total ?? 0)}`
+                ? `${formatBytes(data.records[data.records.length - 1]?.ram ?? 0)} / ${formatBytes((data.records[data.records.length - 1]?.ram_total ?? 0) || fallbackRamTotal)}`
                 : "—"
           }
           note={
@@ -568,8 +579,8 @@ export function LoadChart({
               ? node.swapTotal
                 ? `Swap ${formatBytes(node.swapUsed)} / ${formatBytes(node.swapTotal)}`
                 : "Swap 无"
-              : data?.records.length && (data.records[data.records.length - 1]?.swap_total ?? 0) > 0
-                ? `Swap ${formatBytes(data.records[data.records.length - 1]?.swap ?? 0)} / ${formatBytes(data.records[data.records.length - 1]?.swap_total ?? 0)}`
+              : data?.records.length && ((data.records[data.records.length - 1]?.swap_total ?? 0) > 0 || fallbackSwapTotal > 0)
+                ? `Swap ${formatBytes(data.records[data.records.length - 1]?.swap ?? 0)} / ${formatBytes((data.records[data.records.length - 1]?.swap_total ?? 0) || fallbackSwapTotal)}`
                 : "Swap 无"
           }
           points={points}
@@ -590,7 +601,7 @@ export function LoadChart({
             isRealtime && node
               ? `${formatBytes(node.diskUsed)} / ${formatBytes(node.diskTotal)}`
               : data?.records.length
-                ? `${formatBytes(data.records[data.records.length - 1]?.disk ?? 0)} / ${formatBytes(data.records[data.records.length - 1]?.disk_total ?? 0)}`
+                ? `${formatBytes(data.records[data.records.length - 1]?.disk ?? 0)} / ${formatBytes((data.records[data.records.length - 1]?.disk_total ?? 0) || fallbackDiskTotal)}`
                 : "—"
           }
           note="已用空间"

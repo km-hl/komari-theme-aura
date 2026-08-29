@@ -84,8 +84,10 @@ function formatLossBucketSummary(bucket: PingOverviewBucket | null) {
 
 export const NodeCard = memo(function NodeCard({
   uuid,
+  pingRowCount = 1,
 }: {
   uuid: string;
+  pingRowCount?: number;
 }) {
   const { data: config } = usePublicConfig();
   const { resolvedAppearance } = usePreferences();
@@ -152,6 +154,11 @@ export const NodeCard = memo(function NodeCard({
   const trafficLimitTotal = trafficLimit ? formatBytes(trafficLimit.limit) : "∞";
   const trafficLimitFraction = trafficLimit?.fraction ?? 0;
   const hasHomepagePingBinding = pingSlots.length > 0;
+  const normalizedPingRowCount = Math.max(1, pingRowCount, pingSlots.length);
+  const pingSpacerCount = Math.max(
+    0,
+    normalizedPingRowCount - Math.max(1, pingSlots.length),
+  );
   const isOnline = node.online === true;
   const isOffline = node.online === false;
   const offlineFor = isOffline ? formatOfflineDuration(node.updatedAt) : null;
@@ -305,8 +312,9 @@ export const NodeCard = memo(function NodeCard({
                 {hasHomepagePingBinding ? `${pingSlots.length} 个任务` : "未配置"}
               </span>
             </div>
-            {hasHomepagePingBinding ? (
-              <div className="homepage-ping-card-list">
+            <div className="homepage-ping-card-list">
+              {hasHomepagePingBinding ? (
+                <>
                 {pingSlots.map((slot) => (
                   <PingSlotRow
                     key={slot.taskId}
@@ -314,13 +322,23 @@ export const NodeCard = memo(function NodeCard({
                     redrawKey={resolvedAppearance}
                   />
                 ))}
-              </div>
-            ) : (
-              <div className="server-health-placeholder">未配置首页 Ping</div>
-            )}
+                </>
+              ) : (
+                <div className="server-health-placeholder homepage-ping-card-row is-empty">
+                  未配置首页 Ping
+                </div>
+              )}
+              {Array.from({ length: pingSpacerCount }, (_, index) => (
+                <div
+                  key={`ping-spacer-${index}`}
+                  className="homepage-ping-card-row is-spacer"
+                  aria-hidden
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+          <div className="server-card-lifecycle grid grid-cols-2 gap-x-4">
             <FooterStat
               icon={<Calendar size={13} strokeWidth={2} />}
               label="到期"

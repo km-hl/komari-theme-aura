@@ -6,7 +6,7 @@ import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { usePingRecords } from "@/hooks/useRecords";
 import { InstancePanel } from "./InstancePanel";
 import {
-  formatHourMinuteAxis,
+  createTimeAxisFormatter,
   formatTooltipTime,
   getChartTooltipPosition,
   toChartSeconds,
@@ -65,7 +65,7 @@ export function PingChart({
   const { resolvedAppearance } = usePreferences();
   const { w, h } = useResponsiveChartSize("wide");
   const [hiddenTasks, setHiddenTasks] = useState<Set<number>>(new Set());
-  const [connectNulls, setConnectNulls] = useState(true);
+  const [connectNulls, setConnectNulls] = useState(false);
   const [cutPeak, setCutPeak] = useState(false);
   const chartRef = useRef<uPlot.AlignedData>([[]]);
   const [tooltip, setTooltip] = useState<TooltipState>({
@@ -136,7 +136,11 @@ export function PingChart({
     const taskTables = tasks.map((task) => {
       const records = (recordsByTask.get(task.id) ?? []).sort((left, right) => left.time - right.time);
       const detectedInterval = detectTypicalIntervalMs(records.map((record) => record.time), 60);
-      const interval = task.interval > 0 ? task.interval : detectedInterval;
+      // Longer ranges are downsampled by Komari (for example from 60s to
+      // 300s). Using only the configured task interval would manufacture a
+      // null between every returned point and make the line disappear while
+      // "断点连线" is disabled.
+      const interval = Math.max(task.interval > 0 ? task.interval : 0, detectedInterval);
       let points: TimedMetricPoint[] = records.map((record) => ({
         time: record.time,
         value: record.value > 0 ? record.value : null,
@@ -206,7 +210,7 @@ export function PingChart({
           grid: { stroke: grid, width: 1 },
           ticks: { stroke: grid },
           size: 36,
-          values: formatHourMinuteAxis,
+          values: createTimeAxisFormatter(hours),
         },
         {
           stroke: text,
@@ -279,7 +283,7 @@ export function PingChart({
         ],
       },
     };
-  }, [chart, connectNulls, h, hiddenTasks, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, yRange]);
+  }, [chart, connectNulls, h, hiddenTasks, hours, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, yRange]);
 
   const taskStats = useMemo(() => {
     const grouped = new Map<number, PingRecord[]>();

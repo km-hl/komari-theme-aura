@@ -1,4 +1,12 @@
+import { useMemo } from "react";
 import { useHomepagePingOverview } from "@/hooks/usePingMini";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
+import {
+  getHomepagePingTaskIdsForClient,
+  normalizeHomepagePingTaskBindings,
+  normalizeHomepagePingTaskIds,
+  normalizeHomepagePingTaskOrderByClient,
+} from "@/utils/pingTasks";
 import { NodeCard } from "./NodeCard";
 
 interface NodeGridProps {
@@ -7,6 +15,27 @@ interface NodeGridProps {
 
 export function NodeGrid({ uuids }: NodeGridProps) {
   useHomepagePingOverview();
+  const { data: config } = usePublicConfig();
+  const pingRowCount = useMemo(() => {
+    const bindings = normalizeHomepagePingTaskBindings(
+      config?.theme_settings?.homepagePingBindings,
+    );
+    const fallbackTaskIds = normalizeHomepagePingTaskIds(
+      config?.theme_settings?.homepagePingTaskIds,
+    );
+    if (Object.keys(bindings).length === 0) {
+      return Math.max(1, fallbackTaskIds.length);
+    }
+    const orderByClient = normalizeHomepagePingTaskOrderByClient(
+      config?.theme_settings?.homepagePingOrderByClient,
+    );
+    return Math.max(
+      1,
+      ...uuids.map((uuid) =>
+        getHomepagePingTaskIdsForClient(bindings, uuid, orderByClient).length,
+      ),
+    );
+  }, [config?.theme_settings, uuids]);
 
   if (uuids.length === 0) {
     return (
@@ -24,7 +53,7 @@ export function NodeGrid({ uuids }: NodeGridProps) {
     >
       {uuids.map((uuid) => (
         <div key={uuid}>
-          <NodeCard uuid={uuid} />
+          <NodeCard uuid={uuid} pingRowCount={pingRowCount} />
         </div>
       ))}
     </div>

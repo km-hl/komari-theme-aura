@@ -208,6 +208,63 @@
   font-size: 11px;
 }
 
+.dashboard-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboard-section-title {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elev) 78%, transparent);
+  box-shadow: 0 10px 24px -22px rgba(0, 0, 0, 0.7);
+  padding: 7px 14px 7px 11px;
+  color: var(--text-primary);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
+.dashboard-section-title svg {
+  color: var(--progress-cpu);
+}
+
+.dashboard-section-title h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-section-rule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--hairline), transparent);
+}
+
+.theme-manage-text-input {
+  min-width: 0;
+  flex: 1 1 260px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 9px 14px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.theme-manage-text-input:focus {
+  border-color: color-mix(in srgb, var(--progress-cpu) 62%, var(--border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--progress-cpu) 12%, transparent);
+}
+
 .theme-manage-reset-chip {
   display: inline-flex;
   align-items: center;
@@ -1865,6 +1922,16 @@
   align-items: center;
 }
 
+.homepage-ping-card-row.is-spacer {
+  min-height: 34px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.homepage-ping-card-row.is-empty {
+  min-height: 34px;
+}
+
 .homepage-ping-card-head,
 .homepage-ping-card-row {
   justify-content: space-between;
@@ -2352,6 +2419,14 @@
   border-radius: 0;
   background: transparent;
   padding: 0;
+}
+
+.homepage-ping-card-row.is-empty {
+  display: flex;
+}
+
+.server-card-lifecycle {
+  margin-block: -8px;
 }
 
 .homepage-ping-card-task {

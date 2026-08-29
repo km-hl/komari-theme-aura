@@ -3,7 +3,7 @@
   <p>一款为 <a href="https://github.com/komari-monitor/komari">Komari Monitor</a> 打造的现代化探针监控主题。</p>
 
   <p>
-    <img alt="版本" src="https://img.shields.io/badge/version-v1.0.68-blue.svg" />
+    <img alt="版本" src="https://img.shields.io/badge/version-v1.0.69-blue.svg" />
     <img alt="React" src="https://img.shields.io/badge/React-19-61dafb.svg?logo=react" />
     <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-v4-38b2ac.svg?logo=tailwind-css" />
     <img alt="License" src="https://img.shields.io/badge/license-MIT-green.svg" />
@@ -92,7 +92,7 @@ npm run build
 npm run package
 ```
 
-`npm run package` 会根据 `komari-theme.json` 的版本号生成类似 `Aura-v1.0.68.zip` 的主题包。
+`npm run package` 会根据 `komari-theme.json` 的版本号生成类似 `Aura-v1.0.69.zip` 的主题包。
 
 ## 致谢
 

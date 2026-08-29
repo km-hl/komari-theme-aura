@@ -7,6 +7,7 @@ import {
   ArrowUp,
   Check,
   LayoutTemplate,
+  LayoutDashboard,
   Moon,
   Plus,
   RefreshCw,
@@ -55,6 +56,7 @@ const APPEARANCE_OPTIONS = [
 ] as const;
 
 const THEME_COLOR_OPTIONS = ["#a855f7", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"];
+const DEFAULT_DASHBOARD_TITLE = "仪表盘";
 
 function normalizeAppearance(value: unknown): Appearance {
   return value === "light" || value === "dark" || value === "system" ? value : "system";
@@ -138,6 +140,7 @@ export function ThemeManage() {
   } = useAuth();
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
+  const [draftDashboardTitle, setDraftDashboardTitle] = useState(DEFAULT_DASHBOARD_TITLE);
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
   const [draftOrderByClient, setDraftOrderByClient] = useState<HomepagePingTaskOrderByClient>({});
   const [bulkTaskIds, setBulkTaskIds] = useState<number[]>([]);
@@ -211,6 +214,12 @@ export function ThemeManage() {
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
   );
+  const sourceDashboardTitle = useMemo(() => {
+    const value = config?.theme_settings?.dashboardTitle;
+    return typeof value === "string" && value.trim()
+      ? value.trim().slice(0, 24)
+      : DEFAULT_DASHBOARD_TITLE;
+  }, [config?.theme_settings?.dashboardTitle]);
   const sourceOrderByClient = useMemo(
     () => normalizeHomepagePingTaskOrderByClient(config?.theme_settings?.homepagePingOrderByClient),
     [config?.theme_settings?.homepagePingOrderByClient],
@@ -219,6 +228,7 @@ export function ThemeManage() {
   useEffect(() => {
     if (!config) return;
     setDraftAppearance(sourceAppearance);
+    setDraftDashboardTitle(sourceDashboardTitle);
     setDraftPriceTagColor(sourcePriceTagColor);
     setDraftMapRegionColor(sourceMapRegionColor);
     setDraftBindings(sourceBindings);
@@ -228,7 +238,7 @@ export function ThemeManage() {
     setDraftWallpaperData(sourceWallpaperData);
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
     setDraftCardOpacity(sourceCardOpacity);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceOrderByClient, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity, sourceCardOpacity]);
+  }, [config, sourceAppearance, sourceDashboardTitle, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceOrderByClient, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity, sourceCardOpacity]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
@@ -269,6 +279,7 @@ export function ThemeManage() {
   );
   const isDirty =
     draftAppearance !== sourceAppearance ||
+    draftDashboardTitle !== sourceDashboardTitle ||
     draftPriceTagColor !== sourcePriceTagColor ||
     draftMapRegionColor !== sourceMapRegionColor ||
     draftWallpaperMode !== sourceWallpaperMode ||
@@ -353,6 +364,7 @@ export function ThemeManage() {
       const nextSettings = {
         ...baseSettings,
         defaultAppearance: draftAppearance,
+        dashboardTitle: draftDashboardTitle.trim().slice(0, 24) || DEFAULT_DASHBOARD_TITLE,
         priceTagColor: draftPriceTagColor,
         mapRegionColor: draftMapRegionColor,
         wallpaperMode: draftWallpaperMode,
@@ -382,6 +394,7 @@ export function ThemeManage() {
 
   const handleReset = () => {
     setDraftAppearance(sourceAppearance);
+    setDraftDashboardTitle(sourceDashboardTitle);
     setDraftPriceTagColor(sourcePriceTagColor);
     setDraftMapRegionColor(sourceMapRegionColor);
     setDraftWallpaperMode(sourceWallpaperMode);
@@ -616,6 +629,38 @@ export function ThemeManage() {
                </button>
              )}
           </div>
+        </div>
+      </InstancePanel>
+
+      <InstancePanel
+        title="仪表盘标题"
+        description="自定义首页统计卡片上方的栏目标题，最多 24 个字符。"
+        aside={<LayoutDashboard size={16} />}
+      >
+        <div className="surface-inset flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center">
+          <label htmlFor="dashboard-title" className="shrink-0 text-[13px] font-medium text-[var(--text-primary)]">
+            标题文字
+          </label>
+          <input
+            id="dashboard-title"
+            type="text"
+            maxLength={24}
+            value={draftDashboardTitle}
+            onChange={(event) => setDraftDashboardTitle(event.target.value)}
+            placeholder={DEFAULT_DASHBOARD_TITLE}
+            className="theme-manage-text-input"
+          />
+          <span className="shrink-0 text-[11px] tabular-nums text-[var(--text-tertiary)]">
+            {draftDashboardTitle.length} / 24
+          </span>
+          <button
+            type="button"
+            onClick={() => setDraftDashboardTitle(DEFAULT_DASHBOARD_TITLE)}
+            disabled={draftDashboardTitle === DEFAULT_DASHBOARD_TITLE}
+            className="theme-manage-reset-chip shrink-0"
+          >
+            恢复默认
+          </button>
         </div>
       </InstancePanel>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Clock, Server, Activity, ArrowUp, ArrowDown, Map, HardDrive } from "lucide-react";
+import { Clock, Server, Activity, ArrowUp, ArrowDown, Map, HardDrive, LayoutDashboard } from "lucide-react";
 import { useGlobalStats } from "@/hooks/useNode";
+import { usePublicConfig } from "@/hooks/usePublicConfig";
 import { formatBytes } from "@/utils/format";
 import WorldMap from "./WorldMap";
 import { useValueStats } from "@/hooks/useValueStats";
@@ -8,11 +9,17 @@ import { VisitorCard } from "./VisitorCard";
 
 export function Dashboard() {
   const stats = useGlobalStats();
+  const { data: config } = usePublicConfig();
   const [currency, setCurrency] = useState<"CNY" | "USD">("CNY");
   const { totalResidual, totalMonthlyCost, loadingRates } = useValueStats(currency);
   const [showMap, setShowMap] = useState(false);
   const [isYearlyCost, setIsYearlyCost] = useState(false);
   const [time, setTime] = useState(new Date());
+  const configuredTitle = config?.theme_settings?.dashboardTitle;
+  const dashboardTitle =
+    typeof configuredTitle === "string" && configuredTitle.trim()
+      ? configuredTitle.trim().slice(0, 24)
+      : "仪表盘";
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -38,7 +45,13 @@ export function Dashboard() {
 
   return (
     <div className="mb-6">
-      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">仪表盘</h2>
+      <div className="dashboard-section-heading">
+        <span className="dashboard-section-title">
+          <LayoutDashboard size={16} strokeWidth={2.2} />
+          <h2>{dashboardTitle}</h2>
+        </span>
+        <span className="dashboard-section-rule" aria-hidden />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         
         {/* Time Card */}

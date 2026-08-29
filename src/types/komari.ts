@@ -189,6 +189,7 @@ export interface ThemeSettings {
   homepagePingTaskIds?: number[];
   homepagePingBindings?: Record<string, string[]>;
   homepagePingOrderByClient?: Record<string, number[]>;
+  dashboardTitle?: string;
   siteTitle?: string;
   wallpaperMode?: "none" | "custom_url" | "custom_upload" | "bing";
   wallpaperUrl?: string;
