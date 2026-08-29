@@ -11,8 +11,9 @@ export const LOAD_TIME_RANGE_OPTIONS: TimeRangeOption[] = [
   { label: "4 小时", value: 4 },
   { label: "1 天", value: 24 },
   { label: "7 天", value: 168 },
-  { label: "30 天", value: 720 },
 ];
+
+const MAX_DETAIL_HISTORY_HOURS = 168;
 
 function formatRangeLabel(hours: number) {
   if (hours % 24 === 0) {
@@ -33,7 +34,7 @@ function buildHistoryRangeOptions(
     return [...options, ...presets];
   }
 
-  const safeMaxHours = Math.floor(maxHours);
+  const safeMaxHours = Math.min(Math.floor(maxHours), MAX_DETAIL_HISTORY_HOURS);
   const resolved = presets.filter((option) => option.value <= safeMaxHours);
   const hasExactMatch = resolved.some((option) => option.value === safeMaxHours);
 
@@ -48,6 +49,10 @@ function buildHistoryRangeOptions(
 }
 
 export function buildLoadTimeRangeOptions(maxHours: number | null | undefined) {
+  return buildHistoryRangeOptions(LOAD_TIME_RANGE_OPTIONS, maxHours, false);
+}
+
+export function buildPingTimeRangeOptions(maxHours: number | null | undefined) {
   return buildHistoryRangeOptions(LOAD_TIME_RANGE_OPTIONS, maxHours, false);
 }
 

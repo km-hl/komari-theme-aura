@@ -5,9 +5,12 @@ import { getPingOverview } from "@/services/api";
 import type { PingOverviewBucket, PingOverviewItem } from "@/types/komari";
 import {
   MAX_HOMEPAGE_PING_TASKS,
+  getHomepagePingTaskIdsForClient,
   normalizeHomepagePingTaskBindings,
   normalizeHomepagePingTaskIds,
+  normalizeHomepagePingTaskOrderByClient,
   type HomepagePingTaskBindings,
+  type HomepagePingTaskOrderByClient,
 } from "@/utils/pingTasks";
 
 const DEFAULT_PING_REFRESH_INTERVAL = 60_000;
@@ -91,6 +94,12 @@ function stringifyBindings(bindings: HomepagePingTaskBindings) {
   );
 }
 
+function stringifyOrderByClient(orderByClient: HomepagePingTaskOrderByClient) {
+  return JSON.stringify(
+    Object.entries(orderByClient).sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
 function buildAssignmentKey(selectedTaskIdsByClient: Map<string, number[]>) {
   return Array.from(selectedTaskIdsByClient.entries())
     .sort(([left], [right]) => left.localeCompare(right))
@@ -101,6 +110,7 @@ function buildAssignmentKey(selectedTaskIdsByClient: Map<string, number[]>) {
 function resolveSelectedTaskIdsByClient(
   clientUuids: string[],
   bindings: HomepagePingTaskBindings,
+  orderByClient: HomepagePingTaskOrderByClient,
   fallbackTaskIds: number[],
 ) {
   const normalizedBindings = normalizeHomepagePingTaskBindings(bindings);
@@ -116,17 +126,8 @@ function resolveSelectedTaskIdsByClient(
     return selectedTaskIdsByClient;
   }
 
-  const entries = Object.entries(normalizedBindings).sort(
-    ([left], [right]) => Number(left) - Number(right),
-  );
-
   for (const uuid of clientUuids) {
-    const taskIds: number[] = [];
-    for (const [taskId, clients] of entries) {
-      if (!clients.includes(uuid)) continue;
-      taskIds.push(Number(taskId));
-      if (taskIds.length >= MAX_HOMEPAGE_PING_TASKS) break;
-    }
+    const taskIds = getHomepagePingTaskIdsForClient(normalizedBindings, uuid, orderByClient);
     if (taskIds.length > 0) {
       selectedTaskIdsByClient.set(uuid, taskIds);
     }
@@ -299,6 +300,7 @@ async function buildOverviewMap(
   hours: number,
   clientUuids: string[],
   bindings: HomepagePingTaskBindings,
+  orderByClient: HomepagePingTaskOrderByClient,
   fallbackTaskIds: number[],
 ): Promise<PingOverviewMapResult> {
   const normalizedUuids = normalizeVisibleUuids(clientUuids);
@@ -313,6 +315,7 @@ async function buildOverviewMap(
   const selectedTaskIdsByClient = resolveSelectedTaskIdsByClient(
     normalizedUuids,
     bindings,
+    orderByClient,
     fallbackTaskIds,
   );
   const selectedTaskIds = Array.from(
@@ -407,6 +410,8 @@ let scheduledVisibleUuids: string[] = [];
 let scheduledVisibleKey = "";
 let scheduledBindings: HomepagePingTaskBindings = {};
 let scheduledBindingsKey = stringifyBindings({});
+let scheduledOrderByClient: HomepagePingTaskOrderByClient = {};
+let scheduledOrderByClientKey = stringifyOrderByClient({});
 let scheduledFallbackTaskIds: number[] = [];
 let scheduledFallbackTaskIdsKey = "";
 let pingRefreshInFlight = false;
@@ -498,6 +503,7 @@ async function refreshPingOverview() {
   pingRefreshInFlight = true;
   const visibleKey = scheduledVisibleKey;
   const bindingsKey = scheduledBindingsKey;
+  const orderByClientKey = scheduledOrderByClientKey;
   const fallbackTaskIdsKey = scheduledFallbackTaskIdsKey;
 
   try {
@@ -510,11 +516,13 @@ async function refreshPingOverview() {
       1,
       scheduledVisibleUuids,
       scheduledBindings,
+      scheduledOrderByClient,
       scheduledFallbackTaskIds,
     );
     if (
       visibleKey === scheduledVisibleKey &&
       bindingsKey === scheduledBindingsKey &&
+      orderByClientKey === scheduledOrderByClientKey &&
       fallbackTaskIdsKey === scheduledFallbackTaskIdsKey
     ) {
       commitPingOverview(next.assignmentKey, next.intervalMs, next.items);
@@ -524,6 +532,7 @@ async function refreshPingOverview() {
     if (
       visibleKey === scheduledVisibleKey &&
       bindingsKey === scheduledBindingsKey &&
+      orderByClientKey === scheduledOrderByClientKey &&
       fallbackTaskIdsKey === scheduledFallbackTaskIdsKey
     ) {
       schedulePingRefresh(DEFAULT_PING_REFRESH_INTERVAL);
@@ -533,6 +542,7 @@ async function refreshPingOverview() {
     if (
       visibleKey !== scheduledVisibleKey ||
       bindingsKey !== scheduledBindingsKey ||
+      orderByClientKey !== scheduledOrderByClientKey ||
       fallbackTaskIdsKey !== scheduledFallbackTaskIdsKey
     ) {
       void refreshPingOverview();
@@ -543,22 +553,27 @@ async function refreshPingOverview() {
 function ensurePingOverviewStarted(
   visibleUuids: string[],
   bindings: HomepagePingTaskBindings,
+  orderByClient: HomepagePingTaskOrderByClient,
   fallbackTaskIds: number[],
 ) {
   const normalizedVisibleUuids = normalizeVisibleUuids(visibleUuids);
   const visibleKey = normalizedVisibleUuids.join("|");
   const bindingsKey = stringifyBindings(bindings);
+  const orderByClientKey = stringifyOrderByClient(orderByClient);
   const fallbackTaskIdsKey = stringifyTaskIds(fallbackTaskIds);
 
   if (
     scheduledVisibleKey !== visibleKey ||
     scheduledBindingsKey !== bindingsKey ||
+    scheduledOrderByClientKey !== orderByClientKey ||
     scheduledFallbackTaskIdsKey !== fallbackTaskIdsKey
   ) {
     scheduledVisibleUuids = normalizedVisibleUuids;
     scheduledVisibleKey = visibleKey;
     scheduledBindings = bindings;
     scheduledBindingsKey = bindingsKey;
+    scheduledOrderByClient = orderByClient;
+    scheduledOrderByClientKey = orderByClientKey;
     scheduledFallbackTaskIds = fallbackTaskIds;
     scheduledFallbackTaskIdsKey = fallbackTaskIdsKey;
 
@@ -615,10 +630,14 @@ export function useHomepagePingOverview() {
     () => normalizeHomepagePingTaskIds(config?.theme_settings?.homepagePingTaskIds),
     [config?.theme_settings?.homepagePingTaskIds],
   );
+  const orderByClient = useMemo(
+    () => normalizeHomepagePingTaskOrderByClient(config?.theme_settings?.homepagePingOrderByClient),
+    [config?.theme_settings?.homepagePingOrderByClient],
+  );
 
   useEffect(() => {
-    ensurePingOverviewStarted(visibleUuids, bindings, fallbackTaskIds);
-  }, [bindings, fallbackTaskIds, visibleUuids]);
+    ensurePingOverviewStarted(visibleUuids, bindings, orderByClient, fallbackTaskIds);
+  }, [bindings, fallbackTaskIds, orderByClient, visibleUuids]);
 }
 
 export function usePingMini(uuid: string): PingOverviewItem {

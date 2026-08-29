@@ -7,6 +7,7 @@ import path from "node:path";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const komariProxyTarget = env.VITE_KOMARI_PROXY_TARGET || "http://localhost:25774";
+  const komariProxyOrigin = new URL(komariProxyTarget).origin;
 
   return {
   base: "/",
@@ -45,7 +46,13 @@ export default defineConfig(({ mode }) => {
       "/api": {
         target: komariProxyTarget,
         changeOrigin: true,
+        cookieDomainRewrite: "",
         ws: true,
+        configure(proxy) {
+          proxy.on("proxyReqWs", (proxyRequest) => {
+            proxyRequest.setHeader("origin", komariProxyOrigin);
+          });
+        },
       },
     },
   },

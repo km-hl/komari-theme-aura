@@ -106,12 +106,20 @@ export function useGlobalStats() {
   }, [snap.byUuid, visibleUuids]);
 }
 
-export function useFilteredNodeUuids(searchQuery: string, group: string): string[] {
+export function useFilteredNodeUuids(
+  searchQuery: string,
+  group: string,
+  region = "所有",
+): string[] {
   const visibleUuids = useVisibleNodeUuids();
   const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return useMemo(() => {
-    if (!searchQuery && (!group || group === "所有" || group === "All")) return visibleUuids;
+    if (
+      !searchQuery &&
+      (!group || group === "所有" || group === "All") &&
+      (!region || region === "所有" || region === "All")
+    ) return visibleUuids;
 
     const lowerQuery = searchQuery.toLowerCase();
 
@@ -121,6 +129,10 @@ export function useFilteredNodeUuids(searchQuery: string, group: string): string
 
       // Group filter
       if (group && group !== "所有" && group !== "All" && node.group !== group) {
+        return false;
+      }
+
+      if (region && region !== "所有" && region !== "All" && node.region !== region) {
         return false;
       }
 
@@ -134,5 +146,14 @@ export function useFilteredNodeUuids(searchQuery: string, group: string): string
 
       return true;
     });
-  }, [visibleUuids, snap.byUuid, searchQuery, group]);
+  }, [visibleUuids, snap.byUuid, searchQuery, group, region]);
+}
+
+export function useVisibleNodes(): NodeDisplay[] {
+  const visibleUuids = useVisibleNodeUuids();
+  const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return useMemo(
+    () => visibleUuids.map((uuid) => snap.byUuid[uuid]).filter(Boolean),
+    [snap.byUuid, visibleUuids],
+  );
 }

@@ -10,6 +10,9 @@ const Instance = lazy(() =>
 const NotFound = lazy(() =>
   import("@/pages/NotFound").then((m) => ({ default: m.NotFound })),
 );
+const DevLogin = lazy(() =>
+  import("@/pages/DevLogin").then((m) => ({ default: m.DevLogin })),
+);
 
 function Loading() {
   return (
@@ -37,6 +40,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <Instance />
+          </Suspense>
+        ),
+      },
+      {
+        path: "dev-login",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <DevLogin />
           </Suspense>
         ),
       },

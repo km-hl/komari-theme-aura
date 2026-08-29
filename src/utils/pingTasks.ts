@@ -1,5 +1,6 @@
 export type HomepagePingTaskBindings = Record<string, string[]>;
-export const MAX_HOMEPAGE_PING_TASKS = 3;
+export type HomepagePingTaskOrderByClient = Record<string, number[]>;
+export const MAX_HOMEPAGE_PING_TASKS = 6;
 
 export function normalizeHomepagePingTaskBindings(
   value: unknown,
@@ -70,16 +71,44 @@ export function countHomepagePingAssignmentsForClient(
   return count;
 }
 
+export function normalizeHomepagePingTaskOrderByClient(
+  value: unknown,
+): HomepagePingTaskOrderByClient {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const normalized: HomepagePingTaskOrderByClient = {};
+  for (const [clientUuid, taskIds] of Object.entries(value)) {
+    const uuid = clientUuid.trim();
+    if (!uuid || !Array.isArray(taskIds)) continue;
+
+    const selected = Array.from(
+      new Set(
+        taskIds
+          .map((taskId) => Number(taskId))
+          .filter((taskId) => Number.isInteger(taskId) && taskId > 0),
+      ),
+    ).slice(0, MAX_HOMEPAGE_PING_TASKS);
+    if (selected.length > 0) normalized[uuid] = selected;
+  }
+  return normalized;
+}
+
 export function getHomepagePingTaskIdsForClient(
   bindings: HomepagePingTaskBindings,
   clientUuid: string,
+  orderByClient?: HomepagePingTaskOrderByClient,
 ): number[] {
-  return Object.entries(normalizeHomepagePingTaskBindings(bindings))
+  const boundTaskIds = Object.entries(normalizeHomepagePingTaskBindings(bindings))
     .sort(([left], [right]) => Number(left) - Number(right))
     .filter(([, clients]) => clients.includes(clientUuid))
     .map(([taskId]) => Number(taskId))
-    .filter((taskId) => Number.isInteger(taskId) && taskId > 0)
-    .slice(0, MAX_HOMEPAGE_PING_TASKS);
+    .filter((taskId) => Number.isInteger(taskId) && taskId > 0);
+  const boundSet = new Set(boundTaskIds);
+  const preferred = normalizeHomepagePingTaskOrderByClient(orderByClient)[clientUuid] ?? [];
+  return [
+    ...preferred.filter((taskId) => boundSet.has(taskId)),
+    ...boundTaskIds.filter((taskId) => !preferred.includes(taskId)),
+  ].slice(0, MAX_HOMEPAGE_PING_TASKS);
 }
 
 export function normalizeHomepagePingTaskIds(

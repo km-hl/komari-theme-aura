@@ -45,6 +45,13 @@ export function FloatingControls() {
   const showSyncWarning = failureStreak >= 2;
   const hiddenTabIndex = collapsed ? -1 : undefined;
   const ToggleIcon = collapsed ? ChevronLeft : ChevronRight;
+  const adminHref = import.meta.env.DEV && !me?.logged_in ? "/dev-login" : "/admin";
+  const adminLabel = import.meta.env.DEV && !me?.logged_in
+    ? "本地主控登录"
+    : me?.logged_in
+      ? "管理"
+      : "后台登录";
+  const showAdminControl = showAdmin || (import.meta.env.DEV && !me?.logged_in);
 
   if (isThemeManageView) {
     return null;
@@ -108,11 +115,11 @@ export function FloatingControls() {
             >
               <Calculator size={16} />
             </button>
-            {showAdmin && (
+            {showAdminControl && (
               <a
-                href="/admin"
-                aria-label={me?.logged_in ? "管理" : "后台登录"}
-                title={me?.logged_in ? "管理" : "后台登录"}
+                href={adminHref}
+                aria-label={adminLabel}
+                title={adminLabel}
                 tabIndex={hiddenTabIndex}
                 className="control-button grid h-9 w-9 place-items-center"
               >

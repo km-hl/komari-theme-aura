@@ -1,5 +1,7 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { useNode } from "@/hooks/useNode";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Check, ChevronDown } from "lucide-react";
+import { useNode, useVisibleNodes } from "@/hooks/useNode";
 import { Flag } from "@/components/ui/Flag";
 import { getExpireTextColor } from "@/utils/expireStatus";
 import { formatBytes, formatExpireDays, formatUptimeDays } from "@/utils/format";
@@ -44,11 +46,31 @@ export function InstanceDetails({
   onNodeReady?: () => (() => void) | void;
 }) {
   const node = useNode(uuid);
+  const visibleNodes = useVisibleNodes();
   const hasAlignedOnReadyRef = useRef(false);
+  const switcherRef = useRef<HTMLDivElement | null>(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   useEffect(() => {
     hasAlignedOnReadyRef.current = false;
+    setSwitcherOpen(false);
   }, [uuid]);
+
+  useEffect(() => {
+    if (!switcherOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!switcherRef.current?.contains(event.target as Node)) setSwitcherOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSwitcherOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [switcherOpen]);
 
   useEffect(() => {
     if (!node || hasAlignedOnReadyRef.current) return;
@@ -86,9 +108,40 @@ export function InstanceDetails({
     >
       <header className="instance-hero-header is-inside-panel">
         <div className="instance-hero-title-block">
-          <div className="instance-hero-title-row">
-            <Flag region={node.region} size={26} />
-            <h1 className="instance-hero-title">{node.name}</h1>
+          <div ref={switcherRef} className="instance-node-switcher">
+            <button
+              type="button"
+              className="instance-node-switcher-trigger"
+              aria-haspopup="listbox"
+              aria-expanded={switcherOpen}
+              onClick={() => setSwitcherOpen((open) => !open)}
+            >
+              <Flag region={node.region} size={20} />
+              <span className="instance-hero-title">{node.name}</span>
+              <ChevronDown size={16} className={switcherOpen ? "is-open" : undefined} />
+            </button>
+            {switcherOpen && (
+              <div className="instance-node-switcher-menu" role="listbox" aria-label="切换服务器">
+                {visibleNodes.map((item) => (
+                  <Link
+                    key={item.uuid}
+                    to={`/instance/${item.uuid}`}
+                    role="option"
+                    aria-selected={item.uuid === uuid}
+                    className="instance-node-switcher-option"
+                    onClick={() => setSwitcherOpen(false)}
+                  >
+                    <span
+                      className="instance-node-switcher-status"
+                      data-online={item.online === true ? "true" : item.online === false ? "false" : "unknown"}
+                    />
+                    <Flag region={item.region} size={13} />
+                    <span>{item.name}</span>
+                    {item.uuid === uuid && <Check size={14} />}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <p className="instance-hero-subtitle">
             {[node.os, node.arch, node.virtualization].filter(Boolean).join(" · ") || "—"}

@@ -6,6 +6,7 @@ import { PingChart } from "@/components/instance/PingChart";
 import { LoadChart } from "@/components/instance/LoadChart";
 import {
   buildLoadTimeRangeOptions,
+  buildPingTimeRangeOptions,
 } from "@/components/instance/chartShared";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 
@@ -20,6 +21,11 @@ export function Instance() {
     () => buildLoadTimeRangeOptions(config?.record_preserve_time),
     [config?.record_preserve_time],
   );
+  const pingRanges = useMemo(
+    () => buildPingTimeRangeOptions(config?.ping_record_preserve_time),
+    [config?.ping_record_preserve_time],
+  );
+  const chartRanges = chartType === "ping" ? pingRanges : loadRanges;
   const showPingChart = config?.theme_settings?.showPingChart !== false;
 
   const alignCharts = () => {
@@ -37,10 +43,10 @@ export function Instance() {
   }, [uuid]);
 
   useEffect(() => {
-    if (!loadRanges.some((range) => range.value === chartHours)) {
-      setChartHours(loadRanges[0]?.value ?? 1);
+    if (!chartRanges.some((range) => range.value === chartHours)) {
+      setChartHours(chartRanges[0]?.value ?? 1);
     }
-  }, [chartHours, loadRanges]);
+  }, [chartHours, chartRanges]);
 
   useEffect(() => {
     if (!showPingChart && chartType === "ping") {
@@ -87,7 +93,7 @@ export function Instance() {
           key="chart-ranges"
           className="instance-segmented is-scrollable mt-3"
         >
-          {loadRanges.map((range) => (
+          {chartRanges.map((range) => (
             <button
               key={range.value}
               type="button"

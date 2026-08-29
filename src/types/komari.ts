@@ -188,6 +188,7 @@ export interface ThemeSettings {
   offlineNodesBehind?: boolean;
   homepagePingTaskIds?: number[];
   homepagePingBindings?: Record<string, string[]>;
+  homepagePingOrderByClient?: Record<string, number[]>;
   siteTitle?: string;
   wallpaperMode?: "none" | "custom_url" | "custom_upload" | "bing";
   wallpaperUrl?: string;

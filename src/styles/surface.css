@@ -340,9 +340,39 @@
   white-space: nowrap;
 }
 
+.homepage-ping-order-button {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  color: var(--text-secondary);
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.homepage-ping-order-button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.homepage-ping-order-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.homepage-ping-order-button.is-danger:hover {
+  color: var(--status-offline);
+}
+
 .homepage-ping-task-option {
-  display: block;
+  display: flex;
   width: 100%;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--hairline);
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface-sunken) 78%, transparent);
@@ -355,6 +385,69 @@
     opacity 160ms ease,
     transform 160ms ease,
     box-shadow 160ms ease;
+}
+
+.theme-ping-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.theme-ping-task-main {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: inherit;
+}
+
+.theme-ping-task-main strong,
+.theme-ping-task-main small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-ping-task-main strong {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.theme-ping-task-main small {
+  margin-top: 4px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.theme-ping-add-select {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: var(--text-tertiary);
+}
+
+.theme-ping-add-select select {
+  min-width: 0;
+  flex: 1 1 auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  outline: none;
+}
+
+.theme-ping-add-select:focus-within {
+  border-color: var(--border-strong);
 }
 
 .homepage-ping-task-option:hover:not(:disabled),
@@ -372,6 +465,9 @@
 }
 
 .homepage-ping-task-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex: 0 0 auto;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-elev) 76%, var(--surface-sunken) 24%);
@@ -379,6 +475,12 @@
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .theme-ping-task-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .homepage-ping-task-option.is-selected .homepage-ping-task-state {
@@ -430,13 +532,24 @@
 .instance-page-back {
   display: inline-flex;
   width: fit-content;
+  min-height: 36px;
   align-items: center;
   gap: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--border-strong) 62%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 0 14px;
   color: var(--text-secondary);
   font-size: 13px;
-  transition: color 160ms ease;
+  font-weight: 650;
+  box-shadow: 0 12px 26px -22px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .instance-page-back:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+  background: var(--hover-bg);
   color: var(--text-primary);
 }
 
@@ -497,6 +610,62 @@
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.region-filter-bar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 8px 10px;
+  box-shadow: 0 10px 28px -25px rgba(0, 0, 0, 0.35);
+  scrollbar-width: none;
+  backdrop-filter: blur(14px);
+}
+
+.region-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.region-filter-chip {
+  display: inline-flex;
+  min-height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 680;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.region-filter-chip strong {
+  min-width: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-sunken) 76%, transparent);
+  padding: 2px 5px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  text-align: center;
+}
+
+.region-filter-chip:hover,
+.region-filter-chip.is-active {
+  border-color: color-mix(in srgb, var(--border-strong) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-elev) 94%, var(--hover-bg));
+  color: var(--text-primary);
+}
+
+.region-filter-chip.is-active strong {
+  background: color-mix(in srgb, var(--progress-cpu) 16%, var(--surface));
+  color: var(--progress-cpu);
 }
 
 .instance-hero-header.is-inside-panel {
@@ -635,6 +804,99 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.instance-node-switcher {
+  position: relative;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.instance-node-switcher-trigger {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 5px 8px 5px 4px;
+  color: var(--text-primary);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.instance-node-switcher-trigger:hover,
+.instance-node-switcher-trigger[aria-expanded="true"] {
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-elev) 86%, transparent);
+}
+
+.instance-node-switcher-trigger > svg {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  transition: transform 160ms ease;
+}
+
+.instance-node-switcher-trigger > svg.is-open {
+  transform: rotate(180deg);
+}
+
+.instance-node-switcher-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(330px, calc(100vw - 56px));
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  padding: 6px;
+  box-shadow: 0 24px 56px -28px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+}
+
+.instance-node-switcher-option {
+  display: grid;
+  grid-template-columns: 8px 21px minmax(0, 1fr) 14px;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 11px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.instance-node-switcher-option > span:nth-child(3) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instance-node-switcher-option:hover,
+.instance-node-switcher-option[aria-selected="true"] {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.instance-node-switcher-status {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-tertiary);
+}
+
+.instance-node-switcher-status[data-online="true"] {
+  background: var(--status-online);
+}
+
+.instance-node-switcher-status[data-online="false"] {
+  background: var(--status-offline);
 }
 
 .instance-info-group {
@@ -2083,9 +2345,8 @@
 }
 
 .homepage-ping-card-row {
-  display: grid;
-  grid-template-columns: minmax(78px, 0.36fr) minmax(0, 1fr);
-  gap: 12px;
+  position: relative;
+  display: block;
   align-items: start;
   border: 0;
   border-radius: 0;
@@ -2094,10 +2355,15 @@
 }
 
 .homepage-ping-card-task {
+  position: absolute;
+  z-index: 1;
+  top: 1px;
+  left: 1px;
+  max-width: calc(50% - 58px);
   flex-basis: auto;
   gap: 0;
   justify-content: start;
-  padding-top: 1px;
+  padding: 0;
 }
 
 .homepage-ping-card-task-name {

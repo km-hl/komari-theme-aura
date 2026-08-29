@@ -2,14 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  Check,
   LayoutTemplate,
   Moon,
+  Plus,
   RefreshCw,
   Save,
   Search,
   Sun,
   SunMoon,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { InstancePanel } from "@/components/instance/InstancePanel";
@@ -32,9 +38,11 @@ export interface ThemeSettings extends BaseThemeSettings {
 
 import {
   MAX_HOMEPAGE_PING_TASKS,
-  countHomepagePingAssignmentsForClient,
+  getHomepagePingTaskIdsForClient,
   normalizeHomepagePingTaskBindings,
+  normalizeHomepagePingTaskOrderByClient,
   type HomepagePingTaskBindings,
+  type HomepagePingTaskOrderByClient,
 } from "@/utils/pingTasks";
 import { normalizeImageUrl } from "@/utils/imageUrl";
 
@@ -81,16 +89,6 @@ function serializeBindings(bindings: HomepagePingTaskBindings) {
   );
 }
 
-function summarizeNodes(
-  uuids: string[],
-  clientsById: Map<string, AdminClient>,
-) {
-  if (uuids.length === 0) return "未绑定节点";
-  const names = uuids.map((uuid) => clientsById.get(uuid)?.name || uuid);
-  const summary = names.join("、");
-  return summary.length > 92 ? `${summary.slice(0, 92)}...` : summary;
-}
-
 function pruneBindings(bindings: HomepagePingTaskBindings) {
   const normalized = normalizeHomepagePingTaskBindings(bindings);
   const pruned: HomepagePingTaskBindings = {};
@@ -104,32 +102,31 @@ function pruneBindings(bindings: HomepagePingTaskBindings) {
   return pruned;
 }
 
-function applyClientAssignment(
+function replaceClientAssignments(
   bindings: HomepagePingTaskBindings,
-  taskId: number,
   clientUuid: string,
-  checked: boolean,
+  taskIds: number[],
 ) {
-  const taskKey = String(taskId);
   const next = pruneBindings(bindings);
-  const selected = next[taskKey] ?? [];
-
-  if (!checked) {
-    const filtered = selected.filter((uuid) => uuid !== clientUuid);
-    if (filtered.length > 0) next[taskKey] = filtered;
-    else delete next[taskKey];
-    return pruneBindings(next);
+  for (const [taskId, clients] of Object.entries(next)) {
+    const filtered = clients.filter((uuid) => uuid !== clientUuid);
+    if (filtered.length > 0) next[taskId] = filtered;
+    else delete next[taskId];
   }
 
-  if (selected.includes(clientUuid)) return next;
-  if (countHomepagePingAssignmentsForClient(next, clientUuid) >= MAX_HOMEPAGE_PING_TASKS) {
-    return next;
+  for (const taskId of taskIds.slice(0, MAX_HOMEPAGE_PING_TASKS)) {
+    const taskKey = String(taskId);
+    next[taskKey] = Array.from(new Set([...(next[taskKey] ?? []), clientUuid]));
   }
-
-  next[taskKey] = Array.from(new Set([...selected, clientUuid])).sort((left, right) =>
-    left.localeCompare(right),
-  );
   return pruneBindings(next);
+}
+
+function serializeOrderByClient(orderByClient: HomepagePingTaskOrderByClient) {
+  return JSON.stringify(
+    Object.entries(normalizeHomepagePingTaskOrderByClient(orderByClient)).sort(
+      ([left], [right]) => left.localeCompare(right),
+    ),
+  );
 }
 
 export function ThemeManage() {
@@ -142,6 +139,8 @@ export function ThemeManage() {
   const { data: config, isLoading: configLoading } = usePublicConfig();
   const [draftAppearance, setDraftAppearance] = useState<Appearance>("system");
   const [draftBindings, setDraftBindings] = useState<HomepagePingTaskBindings>({});
+  const [draftOrderByClient, setDraftOrderByClient] = useState<HomepagePingTaskOrderByClient>({});
+  const [bulkTaskIds, setBulkTaskIds] = useState<number[]>([]);
   const [draftPriceTagColor, setDraftPriceTagColor] = useState<string | undefined>();
   const [draftMapRegionColor, setDraftMapRegionColor] = useState<string | undefined>();
   const [draftWallpaperMode, setDraftWallpaperMode] = useState<"none" | "custom_url" | "custom_upload" | "bing">("none");
@@ -149,8 +148,6 @@ export function ThemeManage() {
   const [draftWallpaperData, setDraftWallpaperData] = useState("");
   const [draftWallpaperOpacity, setDraftWallpaperOpacity] = useState(20);
   const [draftCardOpacity, setDraftCardOpacity] = useState(75);
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
-  const [taskSearch, setTaskSearch] = useState("");
   const [nodeSearch, setNodeSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -214,6 +211,10 @@ export function ThemeManage() {
     () => normalizeHomepagePingTaskBindings(config?.theme_settings?.homepagePingBindings),
     [config?.theme_settings?.homepagePingBindings],
   );
+  const sourceOrderByClient = useMemo(
+    () => normalizeHomepagePingTaskOrderByClient(config?.theme_settings?.homepagePingOrderByClient),
+    [config?.theme_settings?.homepagePingOrderByClient],
+  );
 
   useEffect(() => {
     if (!config) return;
@@ -221,33 +222,16 @@ export function ThemeManage() {
     setDraftPriceTagColor(sourcePriceTagColor);
     setDraftMapRegionColor(sourceMapRegionColor);
     setDraftBindings(sourceBindings);
+    setDraftOrderByClient(sourceOrderByClient);
     setDraftWallpaperMode(sourceWallpaperMode);
     setDraftWallpaperUrl(sourceWallpaperUrl);
     setDraftWallpaperData(sourceWallpaperData);
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
     setDraftCardOpacity(sourceCardOpacity);
-  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity, sourceCardOpacity]);
+  }, [config, sourceAppearance, sourcePriceTagColor, sourceMapRegionColor, sourceBindings, sourceOrderByClient, sourceWallpaperMode, sourceWallpaperUrl, sourceWallpaperData, sourceWallpaperOpacity, sourceCardOpacity]);
 
   const sortedTasks = useMemo(() => sortTasks(pingTasks ?? []), [pingTasks]);
   const sortedClients = useMemo(() => sortClients(adminClients ?? []), [adminClients]);
-  const clientsById = useMemo(
-    () => new Map(sortedClients.map((client) => [client.uuid, client])),
-    [sortedClients],
-  );
-
-  const filteredTasks = useMemo(() => {
-    const keyword = taskSearch.trim().toLowerCase();
-    if (!keyword) return sortedTasks;
-    return sortedTasks.filter((task) => {
-      return (
-        task.name.toLowerCase().includes(keyword) ||
-        String(task.id).includes(keyword) ||
-        task.type.toLowerCase().includes(keyword) ||
-        task.target.toLowerCase().includes(keyword)
-      );
-    });
-  }, [sortedTasks, taskSearch]);
-
   const visibleClients = useMemo(() => {
     const keyword = nodeSearch.trim().toLowerCase();
     if (!keyword) return sortedClients;
@@ -275,6 +259,14 @@ export function ThemeManage() {
     () => serializeBindings(sourceBindings),
     [sourceBindings],
   );
+  const draftOrderSerialized = useMemo(
+    () => serializeOrderByClient(draftOrderByClient),
+    [draftOrderByClient],
+  );
+  const sourceOrderSerialized = useMemo(
+    () => serializeOrderByClient(sourceOrderByClient),
+    [sourceOrderByClient],
+  );
   const isDirty =
     draftAppearance !== sourceAppearance ||
     draftPriceTagColor !== sourcePriceTagColor ||
@@ -284,15 +276,68 @@ export function ThemeManage() {
     draftWallpaperData !== sourceWallpaperData ||
     draftWallpaperOpacity !== sourceWallpaperOpacity ||
     draftCardOpacity !== sourceCardOpacity ||
-    draftBindingsSerialized !== sourceBindingsSerialized;
+    draftBindingsSerialized !== sourceBindingsSerialized ||
+    draftOrderSerialized !== sourceOrderSerialized;
 
   const assignedNodeCount = useMemo(
-    () => Object.values(draftBindings).reduce(
-      (total, clients) => total + clients.filter((uuid) => clientsById.has(uuid)).length,
+    () => sortedClients.filter((client) =>
+      getHomepagePingTaskIdsForClient(draftBindings, client.uuid, draftOrderByClient).length > 0,
+    ).length,
+    [draftBindings, draftOrderByClient, sortedClients],
+  );
+  const totalAssignmentCount = useMemo(
+    () => sortedClients.reduce(
+      (total, client) => total + getHomepagePingTaskIdsForClient(
+        draftBindings,
+        client.uuid,
+        draftOrderByClient,
+      ).length,
       0,
     ),
-    [draftBindings, clientsById],
+    [draftBindings, draftOrderByClient, sortedClients],
   );
+
+  const applyAssignmentsToClients = (clientUuids: string[], taskIds: number[]) => {
+    const selectedTaskIds = Array.from(new Set(taskIds))
+      .filter((taskId) => sortedTasks.some((task) => task.id === taskId))
+      .slice(0, MAX_HOMEPAGE_PING_TASKS);
+    setDraftBindings((current) =>
+      clientUuids.reduce(
+        (next, clientUuid) => replaceClientAssignments(next, clientUuid, selectedTaskIds),
+        current,
+      ),
+    );
+    setDraftOrderByClient((current) => {
+      const next = { ...current };
+      for (const clientUuid of clientUuids) {
+        if (selectedTaskIds.length > 0) next[clientUuid] = selectedTaskIds;
+        else delete next[clientUuid];
+      }
+      return normalizeHomepagePingTaskOrderByClient(next);
+    });
+  };
+
+  const updateClientTasks = (clientUuid: string, taskIds: number[]) => {
+    applyAssignmentsToClients([clientUuid], taskIds);
+  };
+
+  const addTaskToAllClients = (taskId: number) => {
+    let nextBindings = draftBindings;
+    const nextOrder = { ...draftOrderByClient };
+    for (const client of sortedClients) {
+      const currentTaskIds = getHomepagePingTaskIdsForClient(
+        nextBindings,
+        client.uuid,
+        nextOrder,
+      );
+      if (currentTaskIds.includes(taskId) || currentTaskIds.length >= MAX_HOMEPAGE_PING_TASKS) continue;
+      const taskIds = [...currentTaskIds, taskId];
+      nextBindings = replaceClientAssignments(nextBindings, client.uuid, taskIds);
+      nextOrder[client.uuid] = taskIds;
+    }
+    setDraftBindings(nextBindings);
+    setDraftOrderByClient(normalizeHomepagePingTaskOrderByClient(nextOrder));
+  };
 
   const handleSave = async () => {
     if (!config?.theme) return;
@@ -316,6 +361,7 @@ export function ThemeManage() {
         wallpaperOpacity: draftWallpaperOpacity,
         cardOpacity: draftCardOpacity,
         homepagePingBindings: pruneBindings(draftBindings),
+        homepagePingOrderByClient: normalizeHomepagePingTaskOrderByClient(draftOrderByClient),
       };
       await saveThemeSettings(config.theme, nextSettings);
       await queryClient.invalidateQueries({ queryKey: ["public"] });
@@ -344,6 +390,8 @@ export function ThemeManage() {
     setDraftWallpaperOpacity(sourceWallpaperOpacity);
     setDraftCardOpacity(sourceCardOpacity);
     setDraftBindings(sourceBindings);
+    setDraftOrderByClient(sourceOrderByClient);
+    setBulkTaskIds([]);
     setMessage(null);
     setError(null);
   };
@@ -378,7 +426,6 @@ export function ThemeManage() {
     (tasksError instanceof Error ? tasksError.message : null) ||
     (clientsError instanceof Error ? clientsError.message : null);
   const noTasksYet = !tasksLoading && !clientsLoading && sortedTasks.length === 0;
-  const noFilteredTaskMatch = !tasksLoading && !clientsLoading && !noTasksYet && filteredTasks.length === 0;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -411,7 +458,7 @@ export function ThemeManage() {
   return (
     <div className="flex flex-col gap-5 py-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/" className="inline-flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border)] px-4 py-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all font-medium text-[13px]">
+        <Link to="/" className="instance-page-back">
           <ArrowLeft size={14} />
           返回首页
         </Link>
@@ -443,7 +490,8 @@ export function ThemeManage() {
         aside={
           <div className="text-right text-[11px] text-[var(--text-tertiary)]">
             <div>主题: {config?.theme || "Aura"}</div>
-            <div>首页 Ping 绑定 {assignedNodeCount} / {sortedClients.length}</div>
+            <div>已配置节点 {assignedNodeCount} / {sortedClients.length}</div>
+            <div>{totalAssignmentCount} 个 Ping 任务绑定</div>
           </div>
         }
       >
@@ -683,7 +731,7 @@ export function ThemeManage() {
         title="主页延迟检测"
         description={
           <>
-            为首页延迟卡片指定对应的 Ping 任务与展示节点；每个节点最多可以绑定 3 个任务，并在首页卡片里显示成多行。
+            按节点配置首页展示的 Ping 任务；每个节点最多绑定 {MAX_HOMEPAGE_PING_TASKS} 个，并可单独调整显示顺序。
             {" "}
             如果当前还没有可用任务，请先前往
             {" "}
@@ -696,29 +744,13 @@ export function ThemeManage() {
         }
         aside={
           <div className="text-[11px] text-[var(--text-tertiary)]">
-            {tasksLoading || clientsLoading ? "载入中" : `${assignedNodeCount} 个绑定`}
+            {tasksLoading || clientsLoading
+              ? "载入中"
+              : `${assignedNodeCount} 个节点 · ${totalAssignmentCount} 个任务绑定`}
           </div>
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(240px,320px)]">
-            <label className="surface-inset flex items-center gap-2 px-3 py-2">
-              <Search size={14} className="text-[var(--text-tertiary)]" />
-              <input
-                value={taskSearch}
-                onChange={(event) => setTaskSearch(event.target.value)}
-                placeholder="搜索 Ping 任务名称 / ID / 类型 / 目标"
-                className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-[var(--text-tertiary)]"
-              />
-            </label>
-            <div className="surface-inset flex items-center justify-between gap-3 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
-              <span>首页绑定总数</span>
-              <strong className="text-[var(--text-primary)]">
-                {assignedNodeCount} / {sortedClients.length}
-              </strong>
-            </div>
-          </div>
-
           {(tasksLoading || clientsLoading) && (
             <div className="flex min-h-[20vh] items-center justify-center">
               <Spinner size={24} />
@@ -734,137 +766,227 @@ export function ThemeManage() {
             </div>
           )}
 
-          {noFilteredTaskMatch && (
-            <div className="surface-inset px-4 py-5 text-[13px] text-[var(--text-secondary)]">
-              没有匹配的 Ping 任务。
-            </div>
-          )}
-
           {!tasksLoading &&
             !clientsLoading &&
             !noTasksYet &&
-            filteredTasks.map((task) => {
-              const assigned = (draftBindings[String(task.id)] ?? []).filter((uuid) => clientsById.has(uuid));
-              const isExpanded = expandedTaskId === task.id;
-              return (
-                <section key={task.id} className="surface-inset px-4 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3 text-left">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
-                          {task.name || `任务 #${task.id}`}
-                        </h3>
-                        <span className="rounded-full border border-[var(--hairline)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-                          {task.type || "icmp"}
-                        </span>
-                        <span className="rounded-full border border-[var(--hairline)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
-                          {task.interval}s
-                        </span>
-                        <span className="rounded-full border border-[var(--hairline)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
-                          ID {task.id}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-[12px] text-[var(--text-secondary)]">
-                        <span title={task.target || ""}>{task.target || "未填写目标"}</span>
-                      </div>
-                      <p
-                        className="mt-2 text-[12px] text-[var(--text-tertiary)]"
-                        title={summarizeNodes(assigned, clientsById)}
-                      >
-                        {summarizeNodes(assigned, clientsById)}
-                      </p>
-                    </div>
+            <>
+              <section className="surface-inset px-4 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">批量绑定模板</h3>
+                    <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">
+                      按点击顺序选择任务，再一次应用到所有节点；任务卡右侧也可一键追加到全部节点。
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={bulkTaskIds.length === 0 || sortedClients.length === 0}
+                      onClick={() => applyAssignmentsToClients(sortedClients.map((client) => client.uuid), bulkTaskIds)}
+                      className="theme-manage-button is-compact is-primary"
+                    >
+                      <Users size={13} />
+                      应用到全部节点
+                    </button>
+                    <button
+                      type="button"
+                      disabled={bulkTaskIds.length === 0 || assignedNodeCount >= sortedClients.length}
+                      onClick={() => applyAssignmentsToClients(
+                        sortedClients
+                          .filter((client) => getHomepagePingTaskIdsForClient(
+                            draftBindings,
+                            client.uuid,
+                            draftOrderByClient,
+                          ).length === 0)
+                          .map((client) => client.uuid),
+                        bulkTaskIds,
+                      )}
+                      className="theme-manage-button is-compact"
+                    >
+                      仅应用到未配置节点
+                    </button>
+                    <button
+                      type="button"
+                      disabled={totalAssignmentCount === 0}
+                      onClick={() => applyAssignmentsToClients(sortedClients.map((client) => client.uuid), [])}
+                      className="theme-manage-button is-compact is-danger"
+                    >
+                      清空全部
+                    </button>
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-2">
-                      {assigned.length > 0 && (
+                {bulkTaskIds.length > 0 && (
+                  <div className="homepage-ping-selection mt-4">
+                    {bulkTaskIds.map((taskId, index) => {
+                      const task = sortedTasks.find((item) => item.id === taskId);
+                      return (
+                        <div key={taskId} className="homepage-ping-selection-chip">
+                          <span className="homepage-ping-selection-index">{index + 1}</span>
+                          <span className="homepage-ping-selection-name">{task?.name || `任务 #${taskId}`}</span>
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => setBulkTaskIds((current) => {
+                              const next = [...current];
+                              [next[index - 1], next[index]] = [next[index]!, next[index - 1]!];
+                              return next;
+                            })}
+                            className="homepage-ping-order-button"
+                            title="前移"
+                          ><ArrowUp size={12} /></button>
+                          <button
+                            type="button"
+                            disabled={index === bulkTaskIds.length - 1}
+                            onClick={() => setBulkTaskIds((current) => {
+                              const next = [...current];
+                              [next[index], next[index + 1]] = [next[index + 1]!, next[index]!];
+                              return next;
+                            })}
+                            className="homepage-ping-order-button"
+                            title="后移"
+                          ><ArrowDown size={12} /></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="theme-ping-task-grid mt-4">
+                  {sortedTasks.map((task) => {
+                    const selectedIndex = bulkTaskIds.indexOf(task.id);
+                    const selected = selectedIndex >= 0;
+                    return (
+                      <div key={task.id} className={clsx("homepage-ping-task-option", selected && "is-selected")}>
                         <button
                           type="button"
-                          onClick={() => {
-                            setDraftBindings((prev) => {
-                              const next = { ...prev };
-                              delete next[String(task.id)];
-                              return pruneBindings(next);
-                            });
-                          }}
-                          className="theme-manage-button is-compact is-danger"
+                          disabled={!selected && bulkTaskIds.length >= MAX_HOMEPAGE_PING_TASKS}
+                          onClick={() => setBulkTaskIds((current) =>
+                            current.includes(task.id)
+                              ? current.filter((taskId) => taskId !== task.id)
+                              : [...current, task.id].slice(0, MAX_HOMEPAGE_PING_TASKS)
+                          )}
+                          className="theme-ping-task-main"
                         >
-                          清空节点
+                          <span className="min-w-0 text-left">
+                            <strong>{task.name || `任务 #${task.id}`}</strong>
+                            <small>{task.type || "icmp"} · {task.interval}s · {task.target || "未填写目标"}</small>
+                          </span>
+                          <span className="homepage-ping-task-state">
+                            {selected ? <><Check size={12} /> 第 {selectedIndex + 1} 项</> : "选择"}
+                          </span>
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setExpandedTaskId((current) => (current === task.id ? null : task.id));
-                          setNodeSearch("");
-                        }}
-                        className="theme-manage-button is-compact"
-                      >
-                        {isExpanded ? "收起节点" : "编辑节点"}
-                      </button>
-                    </div>
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() => addTaskToAllClients(task.id)}
+                          className="theme-manage-button is-compact"
+                          title="保留现有绑定并追加到所有未达上限的节点"
+                        >
+                          <Users size={12} /> 全节点
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
 
-                  {isExpanded && (
-                    <div className="mt-4 border-t border-[var(--hairline)] pt-4">
-                      <label className="surface-inset flex items-center gap-2 px-3 py-2">
-                        <Search size={14} className="text-[var(--text-tertiary)]" />
-                        <input
-                          value={nodeSearch}
-                          onChange={(event) => setNodeSearch(event.target.value)}
-                          placeholder="搜索节点名称 / UUID / 分组 / 地区"
-                          className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-[var(--text-tertiary)]"
-                        />
-                      </label>
+              <label className="surface-inset flex items-center gap-2 px-3 py-2">
+                <Search size={14} className="text-[var(--text-tertiary)]" />
+                <input
+                  value={nodeSearch}
+                  onChange={(event) => setNodeSearch(event.target.value)}
+                  placeholder="搜索节点名称 / UUID / 分组 / 地区"
+                  className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-[var(--text-tertiary)]"
+                />
+              </label>
 
-                      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                        {visibleClients.map((client) => {
-                          const checked = assigned.includes(client.uuid);
-                          const clientAssignmentCount = countHomepagePingAssignmentsForClient(draftBindings, client.uuid);
-                          const disabledByLimit = !checked && clientAssignmentCount >= MAX_HOMEPAGE_PING_TASKS;
-                          const subtitle = [client.group, client.uuid].filter(Boolean).join(" · ");
+              <div className="grid gap-3 lg:grid-cols-2">
+                {visibleClients.map((client) => {
+                  const taskIds = getHomepagePingTaskIdsForClient(
+                    draftBindings,
+                    client.uuid,
+                    draftOrderByClient,
+                  );
+                  const availableTasks = sortedTasks.filter((task) => !taskIds.includes(task.id));
+                  return (
+                    <section key={client.uuid} className="surface-inset px-4 py-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Flag region={client.region} size={14} />
+                            <h3 className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{client.name}</h3>
+                          </div>
+                          <p className="mt-1 truncate text-[11px] text-[var(--text-tertiary)]">
+                            {[client.group, client.region, client.uuid].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        <span className="homepage-ping-task-state">{taskIds.length} / {MAX_HOMEPAGE_PING_TASKS}</span>
+                      </div>
+
+                      <div className="homepage-ping-selection mt-3">
+                        {taskIds.map((taskId, index) => {
+                          const task = sortedTasks.find((item) => item.id === taskId);
                           return (
-                            <label
-                              key={client.uuid}
-                              className={clsx(
-                                "flex cursor-pointer items-start gap-3 rounded-[12px] border px-3 py-3 transition-colors",
-                                checked
-                                  ? "border-[var(--border-strong)] bg-[color-mix(in_srgb,var(--hover-bg)_72%,transparent)]"
-                                  : disabledByLimit
-                                    ? "cursor-not-allowed border-[var(--hairline)] bg-transparent opacity-50"
-                                    : "border-[var(--hairline)] bg-transparent hover:bg-[var(--hover-bg)]",
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={disabledByLimit}
-                                onChange={(event) => {
-                                  setDraftBindings((prev) =>
-                                    applyClientAssignment(prev, task.id, client.uuid, event.target.checked),
-                                  );
+                            <div key={taskId} className="homepage-ping-selection-chip">
+                              <span className="homepage-ping-selection-index">{index + 1}</span>
+                              <span className="homepage-ping-selection-name">{task?.name || `任务 #${taskId}`}</span>
+                              <button
+                                type="button"
+                                disabled={index === 0}
+                                onClick={() => {
+                                  const next = [...taskIds];
+                                  [next[index - 1], next[index]] = [next[index]!, next[index - 1]!];
+                                  updateClientTasks(client.uuid, next);
                                 }}
-                                className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-500)]"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <Flag region={client.region} size={14} />
-                                  <span className="truncate text-[13px] font-medium text-[var(--text-primary)]">
-                                    {client.name}
-                                  </span>
-                                </div>
-                                <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-                                  {subtitle || client.region || "未设置分组"}
-                                </div>
-                              </div>
-                            </label>
+                                className="homepage-ping-order-button"
+                                title="前移"
+                              ><ArrowUp size={12} /></button>
+                              <button
+                                type="button"
+                                disabled={index === taskIds.length - 1}
+                                onClick={() => {
+                                  const next = [...taskIds];
+                                  [next[index], next[index + 1]] = [next[index + 1]!, next[index]!];
+                                  updateClientTasks(client.uuid, next);
+                                }}
+                                className="homepage-ping-order-button"
+                                title="后移"
+                              ><ArrowDown size={12} /></button>
+                              <button
+                                type="button"
+                                onClick={() => updateClientTasks(client.uuid, taskIds.filter((id) => id !== taskId))}
+                                className="homepage-ping-order-button is-danger"
+                                title="移除"
+                              ><Trash2 size={12} /></button>
+                            </div>
                           );
                         })}
+                        {taskIds.length === 0 && (
+                          <span className="text-[12px] text-[var(--text-tertiary)]">尚未绑定 Ping 任务</span>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </section>
-              );
-            })}
+
+                      <label className="theme-ping-add-select mt-3">
+                        <Plus size={13} />
+                        <select
+                          value=""
+                          disabled={taskIds.length >= MAX_HOMEPAGE_PING_TASKS || availableTasks.length === 0}
+                          onChange={(event) => {
+                            const taskId = Number(event.target.value);
+                            if (taskId > 0) updateClientTasks(client.uuid, [...taskIds, taskId]);
+                          }}
+                        >
+                          <option value="">{taskIds.length >= MAX_HOMEPAGE_PING_TASKS ? "已达到绑定上限" : "添加 Ping 任务..."}</option>
+                          {availableTasks.map((task) => (
+                            <option key={task.id} value={task.id}>{task.name || `任务 #${task.id}`}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </section>
+                  );
+                })}
+              </div>
+            </>}
         </div>
       </InstancePanel>
     </div>

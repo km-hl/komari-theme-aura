@@ -27,6 +27,7 @@ export function Home() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeGroup, setActiveGroup] = useState("所有");
+  const [activeRegion, setActiveRegion] = useState("所有");
   const { data: config } = usePublicConfig();
   const defaultViewMode = config?.theme_settings?.defaultView === "table" ? "table" : "grid";
   const [viewMode, setViewMode] = useState<"grid" | "table">(defaultViewMode);
@@ -45,7 +46,21 @@ export function Home() {
     return ["所有", ...Array.from(groupSet).sort()];
   }, [visibleUuids, snap.byUuid]);
 
-  const filteredUuids = useFilteredNodeUuids(searchQuery, activeGroup);
+  const regions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const uuid of visibleUuids) {
+      const region = snap.byUuid[uuid]?.region?.trim();
+      if (region) counts.set(region, (counts.get(region) ?? 0) + 1);
+    }
+    return [
+      { value: "所有", count: visibleUuids.length },
+      ...Array.from(counts, ([value, count]) => ({ value, count })).sort((left, right) =>
+        right.count - left.count || left.value.localeCompare(right.value),
+      ),
+    ];
+  }, [visibleUuids, snap.byUuid]);
+
+  const filteredUuids = useFilteredNodeUuids(searchQuery, activeGroup, activeRegion);
 
   if (isThemeManageView) {
     if (me?.logged_in) {
@@ -111,6 +126,9 @@ export function Home() {
         activeGroup={activeGroup}
         setActiveGroup={setActiveGroup}
         groups={groups}
+        activeRegion={activeRegion}
+        setActiveRegion={setActiveRegion}
+        regions={regions}
         viewMode={viewMode}
         setViewMode={setViewMode}
       />
