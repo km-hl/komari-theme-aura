@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, RefreshCw, Calculator, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
-import { useValueStats, TARGET_CURRENCIES, type TargetCurrency, getRemainingDays } from "@/hooks/useValueStats";
+import { useValueStats, TARGET_CURRENCIES, type TargetCurrency } from "@/hooks/useValueStats";
 
 interface ValueCalculatorProps {
   isOpen: boolean;
@@ -233,7 +233,7 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                     {!item.reason && (
                       view === "residual" ? (
                         <div className="font-bold text-[15px] text-[var(--text-primary)]">
-                          {targetCurrency} {loadingRates ? "-" : item.convertedPrice?.toFixed(2) || (item.convertedPrice === 0 ? "0.00" : "-")}
+                          {targetCurrency} {loadingRates ? "-" : item.residualValue?.toFixed(2) ?? "-"}
                         </div>
                       ) : (
                         <div className="text-right">
@@ -263,14 +263,11 @@ export function ValueCalculator({ isOpen, onClose }: ValueCalculatorProps) {
                           <>
                             <div>
                               剩余时间 {
-                                Math.floor(getRemainingDays(item.node.expired_at))
+                                Math.floor(item.remainingDays)
                               } 天
                             </div>
                             <div>
-                              原币种价值 {item.currency} {(() => {
-                                const remainDays = getRemainingDays(item.node.expired_at);
-                                return (dailyCost * remainDays).toFixed(2);
-                              })()}
+                              原币种剩余价值 {item.currency} {(dailyCost * item.remainingDays).toFixed(2)}
                             </div>
                           </>
                         )}

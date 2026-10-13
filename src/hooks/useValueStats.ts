@@ -194,7 +194,7 @@ export function useValueStats(targetCurrency: TargetCurrency) {
       }
 
       if (remainingDays <= 0) {
-        expiredNodes.push({ node, convertedPrice, cycleDays, currency, price });
+        expiredNodes.push({ node, convertedPrice, cycleDays, remainingDays, residualValue: 0, currency, price });
         continue;
       }
 

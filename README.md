@@ -3,7 +3,7 @@
   <p>一款为 <a href="https://github.com/komari-monitor/komari">Komari Monitor</a> 打造的现代化探针监控主题。</p>
 
   <p>
-    <img alt="版本" src="https://img.shields.io/badge/version-v1.0.69-blue.svg" />
+    <img alt="版本" src="https://img.shields.io/badge/version-v1.0.70-blue.svg" />
     <img alt="React" src="https://img.shields.io/badge/React-19-61dafb.svg?logo=react" />
     <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-v4-38b2ac.svg?logo=tailwind-css" />
   </p>
@@ -19,7 +19,7 @@ Aura 为日常服务器监控提供仪表盘、地区筛选、多任务 Ping、�
 - **多任务延迟检测**：每个节点最多展示 6 个 Ping 任务，包含延迟、丢包率和历史分段条；任务数量不同的卡片也会预留对齐空间。
 - **节点详情与历史图表**：下拉切换服务器，查看系统、资源、网络和服务信息；负载与 Ping 可选择 1 小时、4 小时、1 天、7 天范围。
 - **Ping 统计**：查看均值、p99、丢包率、最小/最大延迟及样本数，支持隐藏任务、削峰平滑和断点连线；断点连线默认关闭。
-- **剩余价值计算器**：查看剩余价值与成本统计，按节点状态筛选并进行多币种换算。
+- **剩余价值计算器**：按剩余天数与计费周期折算每个节点的当前剩余价值，支持状态筛选、多币种换算及月／年成本统计。
 - **主题外观与设置**：浅色、深色、跟随系统；管理员可设置默认外观、仪表盘标题、计费标签颜色、地图点亮颜色、自定义 URL 或上传壁纸，以及壁纸和卡片不透明度。
 - **批量 Ping 配置**：按选择顺序生成绑定模板，一键应用到全部节点或未配置节点；也可向所有节点追加任务，并对单个节点调整显示顺序。
 
